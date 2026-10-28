@@ -475,7 +475,7 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
   height: calc(100dvh - var(--pt) - var(--pb) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .screen.fit > * { flex: none; }
 .screen.fit > .viewpane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.screen.fit .dstrip { position: static; flex: none; }
+.screen.fit .dstrip { position: relative; flex: none; }
 .screen.fit .board { flex: 1; min-height: 0; padding-bottom: 12px; }
 .screen.fit .col { max-height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-x: auto; overscroll-behavior-y: contain; scrollbar-width: thin; }
 .screen.fit .col > * { flex-shrink: 0; }
@@ -517,3 +517,16 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
   .tb-title h1 { font-size: 20px; }
   .tb-title span { font-size: 13px; }
 }
+
+/* date strip follows the screen width: days share the row, 44–72px each, scrolls when they no longer fit */
+.dstrip button { flex: 1 1 0; width: auto; min-width: 44px; max-width: 72px; }
+
+/* one selection circle that slides between dates as the board scrolls */
+.dstrip b { position: relative; transition: color .2s; }
+.dstrip b > span { position: relative; }
+.dstrip button[aria-current="true"] b, .dstrip button.is-today[aria-current="true"] b { background: transparent; }
+.dstrip { position: relative; }
+.dsel { position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); pointer-events: none;
+  transition: transform .38s cubic-bezier(.22, .9, .25, 1), background .2s; will-change: transform; }
+.dsel.today { background: var(--accent); }
+.dstrip button { position: relative; z-index: 1; }

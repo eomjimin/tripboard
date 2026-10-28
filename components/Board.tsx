@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   closestCorners, DndContext, DragOverlay, KeyboardSensor, MouseSensor, TouchSensor, useDroppable, useSensor, useSensors,
   type DragEndEvent, type DragOverEvent, type DragStartEvent,
@@ -98,6 +98,19 @@ export default function Board({ trip, data, catFilter, openCard, openDay, addCar
   };
   useEffect(onScroll); // eslint-disable-line react-hooks/exhaustive-deps
   const stripRef = useRef<HTMLElement>(null);
+  // one selection circle that glides to the current date (positioned inside the strip, so it scrolls with it)
+  const [sel, setSel] = useState<{ x: number; y: number; today: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const place = () => {
+      const s = stripRef.current, b = s?.querySelector<HTMLElement>('[aria-current="true"] b');
+      if (!s || !b) return setSel(null);
+      const sr = s.getBoundingClientRect(), br = b.getBoundingClientRect();
+      setSel({ x: br.left - sr.left + s.scrollLeft, y: br.top - sr.top, today: !!b.closest('.is-today') });
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+  }, [current, days]);
   useEffect(() => { // keep the current date visible in the strip
     const s = stripRef.current, b = s?.querySelector<HTMLElement>('[aria-current="true"]');
     if (s && b) s.scrollTo({ left: b.offsetLeft - s.offsetLeft - s.clientWidth / 2 + b.clientWidth / 2, behavior: 'smooth' });
@@ -113,6 +126,7 @@ export default function Board({ trip, data, catFilter, openCard, openDay, addCar
   return (
     <>
       <nav className="dstrip" aria-label="날짜로 이동" ref={stripRef}>
+        {sel && <span className={`dsel ${sel.today ? 'today' : ''}`} style={{ transform: `translate(${sel.x}px, ${sel.y}px)` }} aria-hidden="true" />}
         {days.map((d, i) => {
           const today = d.date === todayId();
           const prev = days[i - 1], next = days[i + 1];
@@ -122,7 +136,7 @@ export default function Board({ trip, data, catFilter, openCard, openDay, addCar
               style={{ '--c': P.color(d.place) } as React.CSSProperties} onClick={() => scrollTo(d.id)}>
               <span className={`run ${d.place ? '' : 'none'} ${runStart ? 'start' : ''} ${runEnd ? 'end' : ''}`}>{runStart && d.place ? P.code(d.place) : ''}</span>
               <small className={isWeekend(d.date) ? 'we' : ''}>{today ? '오늘' : WD[dt(d.date).getUTCDay()]}</small>
-              <b>{dt(d.date).getUTCDate()}</b>
+              <b><span>{dt(d.date).getUTCDate()}</span></b>
             </motion.button>
           );
         })}
