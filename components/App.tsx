@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast';
 import TripList from './TripList';
 import TripView from './TripView';
 import Toaster from './Toaster';
+import InstallButton from './Install';
+import { inKakao, isMobile, isStandalone, openOutsideKakao } from '@/lib/install';
 
 function useServiceWorker() {
   useEffect(() => {
@@ -33,6 +35,11 @@ function signIn() {
 
 export default function App() {
   useServiceWorker();
+  // KakaoTalk's in-app browser can't install the app (or keep a Google login well): hand the page to the default browser
+  const [kakao] = useState(inKakao);
+  // on a phone, install first and sign in inside the app (an installed iPhone app keeps its own login anyway)
+  const [installFirst, setInstallFirst] = useState(() => isMobile() && !isStandalone());
+  useEffect(() => { if (kakao) openOutsideKakao(); }, [kakao]);
   const user = useAuthUser();
   const email = user?.email?.toLowerCase() ?? null;
   const trips = useTrips(email);
@@ -49,7 +56,20 @@ export default function App() {
   const back = () => { history.pushState(null, '', location.pathname); setTripId(null); };
 
   let screen: React.ReactNode;
-  if (user === undefined || (user && trips === null)) screen = <Gate title="불러오는 중입니다…" />;
+  if (kakao) screen = (
+    <Gate title="기본 브라우저로 여는 중입니다">
+      <p>카톡 안에서는 앱으로 저장하거나 로그인하기 어려워서, 휴대폰 기본 브라우저로 다시 엽니다.</p>
+      <button className="btn big" onClick={openOutsideKakao}>브라우저로 열기</button>
+    </Gate>
+  );
+  else if (user === undefined || (user && trips === null)) screen = <Gate title="불러오는 중입니다…" />;
+  else if (!user && installFirst) screen = (
+    <Gate title="앱으로 설치해서 쓰세요">
+      <p>홈 화면에 트립보드를 추가한 뒤, 앱에서 구글 계정으로 로그인하면 됩니다.</p>
+      <InstallButton big />
+      <button className="linkbtn quiet" onClick={() => setInstallFirst(false)}>설치 없이 브라우저에서 계속</button>
+    </Gate>
+  );
   else if (!user) screen = (
     <Gate title="로그인하고 일정을 열어 주세요">
       <p>초대된 구글 계정으로 로그인하면 일정을 보고 고칠 수 있습니다.</p>

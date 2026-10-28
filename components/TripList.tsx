@@ -9,6 +9,7 @@ import { toast } from '@/lib/toast';
 import { addDays, diff, md, todayId } from '@/lib/util';
 import type { Trip } from '@/lib/types';
 import { Icon, Sheet } from './ui';
+import InstallButton from './Install';
 
 export default function TripList({ trips, email, onOpen }: { trips: Trip[]; email: string; onOpen: (id: string) => void }) {
   const [creating, setCreating] = useState(false);
@@ -39,7 +40,10 @@ export default function TripList({ trips, email, onOpen }: { trips: Trip[]; emai
     <>
       <header className="home-top">
         <div><div className="eyebrow">날짜별 여행 일정 보드</div><h1>{APP_NAME}</h1></div>
-        <motion.button className="avatar" onClick={() => setAcct(true)} whileTap={{ scale: .9 }} aria-label={`계정 (${email})`}>{email[0]?.toUpperCase()}</motion.button>
+        <div className="home-actions">
+          <InstallButton />
+          <motion.button className="avatar" onClick={() => setAcct(true)} whileTap={{ scale: .9 }} aria-label={`계정 (${email})`}>{email[0]?.toUpperCase()}</motion.button>
+        </div>
       </header>
       <section className="trips">
         {upcoming.map(card)}
