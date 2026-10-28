@@ -1,5 +1,5 @@
 {
-  "name": "yeojeongpan",
+  "name": "tripboard",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -1,4 +1,4 @@
-export const APP_NAME = '여정판';
+export const APP_NAME = '트립보드';
 
 // Firebase web app settings. These are public by design; access is enforced by firestore.rules.
 export const firebaseConfig = {

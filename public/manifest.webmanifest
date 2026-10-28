@@ -1,14 +1,28 @@
 {
-  "name": "여정판",
-  "short_name": "여정판",
+  "name": "트립보드",
+  "short_name": "트립보드",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ECF0F5",
-  "theme_color": "#ECF0F5",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "description": "날짜별로 함께 짜는 여행 일정"
 }
