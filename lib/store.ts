@@ -1,4 +1,4 @@
-import { deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, deleteField, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { toast } from './toast';
 import { addDays, uid } from './util';
@@ -29,6 +29,10 @@ const link = (scope: Scope, itemId?: string | null, dayId?: string | null) =>
 
 /* trips */
 export const updateTrip = (tripId: string, patch: Partial<Omit<Trip, 'id'>>) => { setDoc(doc(db, 'trips', tripId), patch, { merge: true }).catch(fail); };
+// Members change one address at a time (never the whole list), so two edits close together can't undo each other.
+export const addMember = (tripId: string, email: string) => { updateDoc(doc(db, 'trips', tripId), { members: arrayUnion(email) }).catch(fail); };
+/** The owner removes someone, or a member leaves (the rules allow a member to take out only themselves). */
+export const removeMember = (tripId: string, email: string) => { updateDoc(doc(db, 'trips', tripId), { members: arrayRemove(email) }).catch(fail); };
 // The trip list shows dates without loading every day, so keep start/end on the trip in step with its days.
 export function syncRange(trip: Trip, dates: string[]) {
   if (!dates.length) return;

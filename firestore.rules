@@ -13,11 +13,13 @@ service cloud.firestore {
         && request.resource.data.owner == email()
         && request.resource.data.members is list
         && email() in request.resource.data.members;
-      // 멤버는 이름·부제·날짜·태그만 고칠 수 있고, 사람 추가/삭제는 만든 사람만 합니다.
+      // 멤버는 이름·부제·날짜·태그를 고치거나 스스로 나갈 수 있고, 다른 사람 추가/삭제는 만든 사람만 합니다.
       allow update: if isMember(resource.data) && (
         email() == resource.data.owner
           ? request.resource.data.owner == resource.data.owner
-          : request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'tag', 'start', 'end', 'places', 'cats'])
+          : (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'tag', 'start', 'end', 'places', 'cats'])
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+                && request.resource.data.members == resource.data.members.removeAll([email()])))
       );
       allow delete: if signedIn() && email() == resource.data.owner;
 

@@ -19,6 +19,8 @@ export const isStandalone = () =>
   matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export const isIOSSafari = () => isIOS() && !/crios|fxios|edgios|kakaotalk|naver|line\//i.test(navigator.userAgent);
+/** Safari 26 moved Share into the ⋯ menu; its user agent keeps iOS at 18, so read Safari's own Version/NN. */
+export const safariVersion = () => Number(navigator.userAgent.match(/Version\/(\d+)/)?.[1] ?? 0);
 export const isAndroid = () => /android/i.test(navigator.userAgent);
 export const isMobile = () => isIOS() || isAndroid();
 export const inKakao = () => /kakaotalk/i.test(navigator.userAgent);
@@ -39,7 +41,7 @@ export function useInstall() {
     const d = deferred;
     return { kind: 'prompt' as const, run: async () => { await d.prompt(); const { outcome } = await d.userChoice; if (outcome === 'accepted') deferred = null; notify(); } };
   }
-  if (isIOS()) return { kind: 'ios' as const, safari: isIOSSafari() };
+  if (isIOS()) return { kind: 'ios' as const, safari: isIOSSafari(), menu: safariVersion() >= 26 };
   if (isAndroid()) return { kind: 'android' as const };
   return null;
 }

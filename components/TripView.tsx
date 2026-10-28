@@ -94,7 +94,7 @@ function TripScreen({ trip, email, onBack, demo }: {
     );
   } else if (sheet?.kind === 'members') {
     sheetTitle = '함께하는 사람'; sheetSub = `${(trip.members || []).length}명`;
-    sheetBody = <MembersSheet trip={trip} email={email} />;
+    sheetBody = <MembersSheet trip={trip} email={email} onLeft={() => { closeAll(); onBack(); }} />;
   } else if (sheet?.kind === 'trip') {
     sheetTitle = '여행 관리'; sheetSub = trip.title;
     sheetBody = <TripSettingsSheet trip={trip} data={data} email={email} onDeleted={() => { closeAll(); onBack(); }} openTags={manageTags} openMembers={() => openSheet({ kind: 'members' })} />;

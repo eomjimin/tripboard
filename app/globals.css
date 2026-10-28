@@ -541,3 +541,9 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
 .kbd { display: inline-grid; place-items: center; vertical-align: middle; width: 26px; height: 26px; border-radius: 7px; background: var(--sunk); color: var(--accent); margin: 0 2px; }
 .gate .linkbtn.quiet { justify-self: center; margin-top: 10px; color: var(--muted); font-weight: 500; font-size: 13.5px; }
 .installed { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0; color: var(--ok); font-size: 14px; font-weight: 500; }
+
+/* after inviting: nudge to send the link */
+.invite-next { display: grid; gap: 10px; background: var(--accent-soft); border-radius: 16px; padding: 14px; }
+.invite-next p { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.invite-next p .ico { color: var(--ok); margin-top: 2px; }
+.invite-next b { overflow-wrap: anywhere; }

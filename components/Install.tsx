@@ -16,14 +16,22 @@ export default function InstallButton({ big }: { big?: boolean }) {
         <Icon name="download" size={big ? 18 : 16} />앱으로 설치
       </motion.button>
       {inst.kind === 'ios' && (
-        <Sheet open={help} onClose={() => setHelp(false)} title="홈 화면에 추가" sub="아이폰은 Safari에서 이렇게 설치합니다">
+        <Sheet open={help} onClose={() => setHelp(false)} title="홈 화면에 추가" sub="아이폰은 Safari에서 이렇게 설치해요">
           <div className="stack">
             {!inst.safari && <p className="notebox">지금 브라우저에서는 설치가 안 될 수 있어요. 이 주소를 <b>Safari</b>에서 열어 주세요.</p>}
             <ol className="steps">
-              <li><span className="stepn">1</span><span>화면 아래 <b>공유</b> 버튼 <span className="kbd"><Icon name="share" size={16} /></span> 을 누릅니다</span></li>
-              <li><span className="stepn">2</span><span>목록을 내려서 <b>홈 화면에 추가</b>를 고릅니다</span></li>
-              <li><span className="stepn">3</span><span>오른쪽 위 <b>추가</b>를 누르면 홈 화면에 트립보드가 생깁니다</span></li>
+              {inst.menu ? (
+                <>
+                  <li><span className="stepn">1</span><span>주소창 오른쪽 <span className="kbd">⋯</span> 버튼을 누릅니다</span></li>
+                  <li><span className="stepn">2</span><span><b>공유</b> <span className="kbd"><Icon name="share" size={16} /></span> 를 누릅니다</span></li>
+                </>
+              ) : (
+                <li><span className="stepn">1</span><span>화면 아래 <b>공유</b> 버튼 <span className="kbd"><Icon name="share" size={16} /></span> 을 누릅니다</span></li>
+              )}
+              <li><span className="stepn">{inst.menu ? 3 : 2}</span><span>목록을 위로 올려 <b>홈 화면에 추가</b>를 누릅니다</span></li>
+              <li><span className="stepn">{inst.menu ? 4 : 3}</span><span>오른쪽 위 <b>추가</b>를 누르면 홈 화면에 트립보드가 생깁니다</span></li>
             </ol>
+            <p className="note-s">아이폰은 애플 정책상 버튼 한 번으로 설치할 수 없어서, Safari 메뉴에서 직접 추가해야 해요.</p>
             <button className="btn big" onClick={() => setHelp(false)}>알겠어요</button>
           </div>
         </Sheet>

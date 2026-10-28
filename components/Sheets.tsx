@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { TripData } from '@/lib/hooks';
-import { addCheck, deleteCheck, deleteItem, deleteTrip, moveItem, savePlace, updateCheck, updateItem, updateTrip } from '@/lib/store';
+import { addCheck, addMember, deleteCheck, deleteItem, deleteTrip, moveItem, removeMember, savePlace, updateCheck, updateItem, updateTrip } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { newPlaceTag, placeOptions, tone, useTags } from '@/lib/tags';
 import { dt, md, uid, WD } from '@/lib/util';
@@ -219,10 +219,21 @@ export function TripSettingsSheet({ trip, data, email, onDeleted, openTags, open
   );
 }
 
-/** Who can open this trip; the owner invites and removes people. */
-export function MembersSheet({ trip, email }: { trip: Trip; email: string }) {
+/** Hands the invitee a link that opens this trip after they sign in (phone share sheet, else copy). */
+async function shareInvite(trip: Trip, to?: string) {
+  const url = `${location.origin}/#${trip.id}`;
+  const text = `‘${trip.title}’ 여행 일정에 초대했어요.${to ? ` ${to} 구글 계정으로 로그인하면 바로 보여요.` : ''}`;
+  try {
+    if (navigator.share) { await navigator.share({ title: '트립보드', text, url }); return; }
+    await navigator.clipboard.writeText(`${text}\n${url}`); toast('초대 링크를 복사했습니다. 카톡 등에 붙여 넣어 보내 주세요.');
+  } catch (e) { if ((e as Error)?.name !== 'AbortError') toast('링크를 보내지 못했습니다.'); }
+}
+
+/** Who can open this trip: the owner invites (then sends the link) and removes people; anyone else can leave. */
+export function MembersSheet({ trip, email, onLeft }: { trip: Trip; email: string; onLeft: () => void }) {
   const owner = trip.owner === email;
   const [mem, setMem] = useState('');
+  const [sent, setSent] = useState<string | null>(null);
   const members = trip.members || [];
   return (
     <div className="stack">
@@ -232,7 +243,7 @@ export function MembersSheet({ trip, email }: { trip: Trip; email: string }) {
             <motion.li key={m} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, height: 0 }}>
               <span className="avatar sm" aria-hidden="true">{m[0]?.toUpperCase()}</span>
               <span className="who"><span>{m}</span>{(m === trip.owner || m === email) && <small>{[m === trip.owner && '만든 사람', m === email && '나'].filter(Boolean).join(' · ')}</small>}</span>
-              {owner && m !== trip.owner && <ConfirmButton compact label={`${m} 빼기`} confirm="" onConfirm={() => updateTrip(trip.id, { members: members.filter(x => x !== m) })} />}
+              {owner && m !== trip.owner && <ConfirmButton compact label={`${m} 빼기`} confirm="" onConfirm={() => removeMember(trip.id, m)} />}
             </motion.li>
           ))}
         </AnimatePresence>
@@ -243,15 +254,35 @@ export function MembersSheet({ trip, email }: { trip: Trip; email: string }) {
           const v = mem.trim().toLowerCase();
           if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { toast('이메일 주소를 확인해 주세요.'); return; }
           if (members.includes(v)) { toast('이미 함께하는 사람입니다.'); return; }
-          updateTrip(trip.id, { members: [...members, v] }); setMem(''); toast(`${v} 님을 초대했습니다.`);
+          addMember(trip.id, v); setMem(''); setSent(v);
         }}>
           <div className="addline">
             <input type="email" value={mem} onChange={e => setMem(e.target.value)} placeholder="동행자 구글 이메일" aria-label="초대할 이메일" autoComplete="off" />
             <button className="btn" disabled={!mem.trim()}>초대</button>
           </div>
-          <p className="note-s">초대된 사람은 같은 주소에서 자기 구글 계정으로 로그인하면 이 여행이 보입니다.</p>
+          <AnimatePresence initial={false}>
+            {sent ? (
+              <motion.div key="sent" className="invite-next" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <p><Icon name="check" size={16} /><span><b>{sent}</b> 님을 추가했어요. 아직 알림은 가지 않았으니 링크를 보내 주세요.</span></p>
+                <button type="button" className="btn big" onClick={() => shareInvite(trip, sent)}><Icon name="share" size={18} />초대 링크 보내기</button>
+              </motion.div>
+            ) : (
+              <motion.p key="hint" className="note-s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                추가한 뒤 초대 링크를 보내면, 그 사람이 자기 구글 계정으로 로그인했을 때 이 여행이 바로 열립니다.{' '}
+                <button type="button" className="linkbtn" onClick={() => shareInvite(trip)}>링크만 보내기</button>
+              </motion.p>
+            )}
+          </AnimatePresence>
         </form>
-      ) : <p className="note-s">사람 추가와 삭제는 여행을 만든 사람만 할 수 있습니다.</p>}
+      ) : (
+        <div className="stack sm">
+          <p className="note-s">사람 추가와 삭제는 여행을 만든 사람만 할 수 있습니다.</p>
+          <div className="danger-zone">
+            <ConfirmButton label="이 여행에서 나가기" title="이 여행에서 나갈까요?" confirm="목록에서 사라지고, 다시 들어오려면 만든 사람이 초대해야 합니다."
+              onConfirm={() => { removeMember(trip.id, email); onLeft(); toast(`‘${trip.title}’에서 나왔습니다.`); }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
