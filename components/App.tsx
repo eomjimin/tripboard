@@ -35,11 +35,10 @@ function signIn() {
 
 export default function App() {
   useServiceWorker();
-  // KakaoTalk's in-app browser can't install the app (or keep a Google login well): hand the page to the default browser
+  // KakaoTalk's in-app browser can't install the app: the script in <head> already sent the page to the default browser; this is the fallback
   const [kakao] = useState(inKakao);
   // on a phone, install first and sign in inside the app (an installed iPhone app keeps its own login anyway)
   const [installFirst, setInstallFirst] = useState(() => isMobile() && !isStandalone());
-  useEffect(() => { if (kakao) openOutsideKakao(); }, [kakao]);
   const user = useAuthUser();
   const email = user?.email?.toLowerCase() ?? null;
   const trips = useTrips(email);

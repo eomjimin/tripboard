@@ -23,8 +23,11 @@ export const isAndroid = () => /android/i.test(navigator.userAgent);
 export const isMobile = () => isIOS() || isAndroid();
 export const inKakao = () => /kakaotalk/i.test(navigator.userAgent);
 
-/** KakaoTalk's own scheme for "open this page in the phone's default browser". */
-export const openOutsideKakao = () => { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); };
+/** KakaoTalk's own schemes: open this page in the phone's default browser, then close the in-app browser. */
+export const openOutsideKakao = () => {
+  location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+  setTimeout(() => { location.href = isIOS() ? 'kakaoweb://closeBrowser' : 'kakaotalk://inappbrowser/close'; }, 400);
+};
 
 /** What the install button can do here: show Chrome's prompt, show the iPhone / Android menu steps, or nothing (installed, or a computer without a prompt). */
 export function useInstall() {

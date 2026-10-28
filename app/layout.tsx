@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 const DESCRIPTION = '날짜별로 함께 짜는 여행 일정';
+const KAKAO_ESCAPE = `(function(){var u=navigator.userAgent;if(!/kakaotalk/i.test(u))return;
+location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);
+setTimeout(function(){location.href=/iphone|ipad|ipod/i.test(u)?'kakaoweb://closeBrowser':'kakaotalk://inappbrowser/close';},400);})();`;
 export const metadata: Metadata = {
   metadataBase: new URL('https://tripboard-a5d64.web.app'),
   title: '트립보드',
@@ -23,6 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
+        {/* Leave KakaoTalk's in-app browser before anything else loads (it can't install the app or keep a Google login). */}
+        <script dangerouslySetInnerHTML={{ __html: KAKAO_ESCAPE }} />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
       </head>
       <body>{children}</body>
