@@ -22,7 +22,7 @@ export default function InstallButton({ big }: { big?: boolean }) {
             <ol className="steps">
               {inst.menu ? (
                 <>
-                  <li><span className="stepn">1</span><span>주소창 오른쪽 <span className="kbd">⋯</span> 버튼을 누릅니다</span></li>
+                  <li><span className="stepn">1</span><span>아래 주소창 왼쪽의 <span className="kbd"><Icon name="pagemenu" size={16} /></span> 버튼을 누릅니다</span></li>
                   <li><span className="stepn">2</span><span><b>공유</b> <span className="kbd"><Icon name="share" size={16} /></span> 를 누릅니다</span></li>
                 </>
               ) : (
