@@ -59,9 +59,12 @@ export function placeFromLink(link: string): PlaceRef {
   return { id: uid(), name, url, ...(at ? { lat: Number(at[1]), lng: Number(at[2]) } : {}) };
 }
 
-/** Google Maps directions from wherever the phone is to this place (transit first, switchable in the app). */
+/**
+ * Google Maps directions from wherever the phone is to this place (transit first, switchable in the app).
+ * The destination is the name and address, not the coordinates: coordinates show up as a dropped pin, a name finds the real place.
+ */
 export function directionsUrl(p: PlaceRef) {
-  if (p.lat == null && p.url) return p.url; // short share links can't be read here: open the place itself
-  const dest = p.lat != null ? `${p.lat},${p.lng}` : p.name;
+  if (p.url && !/\/place\//.test(p.url)) return p.url; // short share links can't be read here: open the place itself
+  const dest = [p.name, p.address].filter(Boolean).join(', ');
   return `https://www.google.com/maps/dir/?api=1&travelmode=transit&destination=${encodeURIComponent(dest)}`;
 }
