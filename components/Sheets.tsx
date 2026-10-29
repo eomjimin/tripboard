@@ -73,7 +73,7 @@ export function CardSheet({ trip, data, item, onClose, onManage }: { trip: Trip;
             <p className="cardview-t">{item.text}</p>
           </div>
           <CardAttachments trip={trip} data={data} item={item} />
-          <CardPlaces trip={trip} item={item} />
+          <CardPlaces trip={trip} data={data} item={item} />
           <section className="block">
             <div className="block-h"><b>체크리스트</b>{checks.length > 0 && <span className="n">{n}/{checks.length}</span>}</div>
             {checks.length ? <CheckRows trip={trip} rows={checks} /> : <p className="muted small">체크리스트가 없습니다. ✎ 편집에서 추가할 수 있습니다.</p>}

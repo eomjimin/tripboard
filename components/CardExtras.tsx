@@ -1,10 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import type { TripData } from '@/lib/hooks';
 import { openPdf, readAttachment } from '@/lib/attach';
-import { directionsUrl, isLink, placeFromLink, searchPlaces } from '@/lib/places';
+import { directionsUrl, hasHangul, isLink, placeFromLink, searchPlaces, suggestPlaces } from '@/lib/places';
 import { addAttachment, deleteAttachment, updateItem } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { uid } from '@/lib/util';
@@ -90,9 +90,12 @@ function Viewer({ trip, files, start, onClose }: { trip: Trip; files: Attachment
 }
 
 /** Places on a card; each opens Google Maps directions from where you are. */
-export function CardPlaces({ trip, item }: { trip: Trip; item: Item }) {
+export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
   const places = item.places ?? [];
   const [adding, setAdding] = useState(false);
+  // Rank search results near where this trip already is: this card's places first, then any card's.
+  const anchor = [...places, ...data.items.flatMap(i => i.places ?? [])].find(x => x.lat != null && x.lng != null);
+  const near = useMemo(() => (anchor ? { lat: anchor.lat!, lng: anchor.lng! } : undefined), [anchor?.lat, anchor?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = (next: PlaceRef[]) => updateItem(trip.id, item.id, { places: next });
   return (
     <section className="block">
@@ -106,20 +109,32 @@ export function CardPlaces({ trip, item }: { trip: Trip; item: Item }) {
         </div>
       ))}
       {adding
-        ? <PlaceSearch onPick={p => { save([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />
+        ? <PlaceSearch near={near} onPick={p => { save([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />
         : <button className="addcard" onClick={() => setAdding(true)}><Icon name="plus" size={16} />장소 추가</button>}
     </section>
   );
 }
 
 /** Search OpenStreetMap on submit, keep the typed name, or take a pasted Google Maps link. */
-function PlaceSearch({ onPick, onCancel }: { onPick: (p: PlaceRef) => void; onCancel: () => void }) {
+function PlaceSearch({ near, onPick, onCancel }: { near?: { lat: number; lng: number }; onPick: (p: PlaceRef) => void; onCancel: () => void }) {
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<PlaceRef[] | null>(null);
   const [busy, setBusy] = useState(false);
-  const query = q.trim(), link = isLink(query);
+  const query = q.trim(), link = isLink(query), korean = hasHangul(query);
+  // Latin queries: results while typing (debounced, older requests cancelled). Hangul: on submit only.
+  useEffect(() => {
+    if (query.length < 2 || link || korean) { setHits(null); return; } // keep the last results on screen while the next ones load
+    const ctl = new AbortController();
+    const t = setTimeout(async () => {
+      setBusy(true);
+      try { setHits(await suggestPlaces(query, near, ctl.signal)); } catch (e) { if (!ctl.signal.aborted) setHits([]); }
+      if (!ctl.signal.aborted) setBusy(false);
+    }, 250);
+    return () => { clearTimeout(t); ctl.abort(); setBusy(false); };
+  }, [query, link, korean, near]);
   const search = async () => {
     if (!query || link) return;
+    if (!korean) { if (hits?.[0]) onPick(hits[0]); return; }
     setBusy(true);
     try { setHits(await searchPlaces(query)); } catch { setHits([]); toast('검색하지 못했어요. 이름 그대로 저장할 수 있어요.'); }
     setBusy(false);
@@ -127,8 +142,8 @@ function PlaceSearch({ onPick, onCancel }: { onPick: (p: PlaceRef) => void; onCa
   return (
     <div className="psearch">
       <form className="addline" onSubmit={e => { e.preventDefault(); if (link) onPick(placeFromLink(query)); else search(); }}>
-        <input value={q} onChange={e => { setQ(e.target.value); setHits(null); }} placeholder="장소 이름 · 주소 · 구글맵 링크" aria-label="장소 검색" autoFocus enterKeyHint="search" />
-        <button className="btn" disabled={!query || busy}>{link ? '저장' : busy ? '찾는 중…' : '검색'}</button>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="장소 이름 · 주소 · 구글맵 링크" aria-label="장소 검색" autoFocus enterKeyHint="search" />
+        {(link || korean) && <button className="btn" disabled={!query || busy}>{link ? '저장' : busy ? '찾는 중…' : '검색'}</button>}
       </form>
       {link && <p className="note-s">구글맵 링크는 그대로 저장하고, 누르면 구글맵에서 그 장소가 열려요.</p>}
       {hits && (
@@ -144,7 +159,10 @@ function PlaceSearch({ onPick, onCancel }: { onPick: (p: PlaceRef) => void; onCa
           </button>
         </div>
       )}
-      {!hits && !link && <p className="note-s">영어나 현지어로 찾으면 더 잘 나와요. 예: Barcelona Airport T1</p>}
+      {!hits && !link && (
+        <p className="note-s">{korean ? '한글은 [검색]을 눌러야 찾아요. 영어·현지어로 치면 입력하는 대로 바로 떠요.'
+          : busy ? '찾는 중…' : '영어나 현지어로 치면 입력하는 대로 찾아요. 예: Sagrada, Barcelona Airport'}</p>
+      )}
       <button className="linkbtn quiet" onClick={onCancel}>취소</button>
     </div>
   );
