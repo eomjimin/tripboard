@@ -8,6 +8,7 @@ import { newPlaceTag, placeOptions, tone, useTags } from '@/lib/tags';
 import { dt, md, uid, WD } from '@/lib/util';
 import type { Cat, Check, Day, Item, Trip } from '@/lib/types';
 import { PlaceChip, PlaceEditor } from './PlaceSelect';
+import { CardAttachments, CardPlaces } from './CardExtras';
 import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Icon, InlineField, Swatches, Tick } from './ui';
 
 /** Checklist rows. Normally they can only be ticked; with `editable` the text can be changed and rows removed. */
@@ -62,7 +63,7 @@ export function CardSheet({ trip, data, item, onClose, onManage }: { trip: Trip;
           </section>
           <div className="sheet-foot">
             <ConfirmButton label="카드 삭제" title="이 카드를 삭제할까요?" confirm={checks.length ? '카드의 체크리스트는 이 날짜에 남습니다.' : '되돌릴 수 없습니다.'}
-              onConfirm={() => { deleteItem(trip.id, item, data.checks); onClose(); toast('카드를 삭제했습니다.'); }} />
+              onConfirm={() => { deleteItem(trip.id, item, data.checks, data.files); onClose(); toast('카드를 삭제했습니다.'); }} />
           </div>
         </>
       ) : (
@@ -71,6 +72,8 @@ export function CardSheet({ trip, data, item, onClose, onManage }: { trip: Trip;
             <div className="cmeta"><CatChip cat={item.cat} />{item.time && <span className="time">{item.time}</span>}<span className="grow" /><EditToggle editing={false} onToggle={() => setEditing(true)} /></div>
             <p className="cardview-t">{item.text}</p>
           </div>
+          <CardAttachments trip={trip} data={data} item={item} />
+          <CardPlaces trip={trip} item={item} />
           <section className="block">
             <div className="block-h"><b>체크리스트</b>{checks.length > 0 && <span className="n">{n}/{checks.length}</span>}</div>
             {checks.length ? <CheckRows trip={trip} rows={checks} /> : <p className="muted small">체크리스트가 없습니다. ✎ 편집에서 추가할 수 있습니다.</p>}

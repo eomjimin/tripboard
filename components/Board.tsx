@@ -240,7 +240,7 @@ function DayEditor({ trip, data, day, onDone }: { trip: Trip; data: TripData; da
         <span className="grow" />
         <ConfirmButton icon label="이 날짜 삭제" title={`${md(day.date)} 일정을 삭제할까요?`} confirm={items.length ? `카드 ${items.length}개도 함께 지워지고 되돌릴 수 없습니다.` : '되돌릴 수 없습니다.'}
           onConfirm={() => {
-            deleteDay(trip.id, day, data.items, data.checks);
+            deleteDay(trip.id, day, data.items, data.checks, data.files);
             syncRange(trip, data.days.filter(x => x.id !== day.id).map(x => x.date));
             toast(`${md(day.date)} 일정을 삭제했습니다.`);
           }} />
@@ -298,12 +298,19 @@ function SortableCard({ item, data, dim, onOpen }: { item: Item; data: TripData;
 function CardFace({ item, data, lifted }: { item: Item; data: TripData; lifted?: boolean }) {
   const cat = useTags().cat(item.cat);
   const checks = data.checksOfItem(item.id), n = checks.filter(c => c.done).length;
+  const files = data.filesOfItem(item.id).length, places = item.places?.length ?? 0;
   return (
     <motion.div className={`card ${lifted ? 'lifted' : ''}`} style={{ '--k': tone(cat.color) } as React.CSSProperties} initial={lifted ? { scale: 1, rotate: 0 } : false}
       animate={lifted ? { scale: 1.04, rotate: -1.5 } : undefined} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
       <span className="cmeta"><span className="kname">{cat.name}</span>{item.time && <span className="time">{item.time}</span>}</span>
       <span className="txt">{item.text}</span>
-      {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checks" size={13} />{n}/{checks.length}</span>}
+      {(checks.length > 0 || files > 0 || places > 0) && (
+        <span className="cbadges">
+          {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checks" size={13} />{n}/{checks.length}</span>}
+          {files > 0 && <span className="cbadge"><Icon name="clip" size={13} />{files}</span>}
+          {places > 0 && <span className="cbadge"><Icon name="pin" size={13} />{places}</span>}
+        </span>
+      )}
     </motion.div>
   );
 }

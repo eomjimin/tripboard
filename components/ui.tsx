@@ -20,6 +20,9 @@ const ICONS = {
   x: 'M6 6l12 12M18 6L6 18',
   check: 'M5 12.5l4.5 4.5L19 7.5',
   download: 'M12 4v11M7.5 10.5l4.5 4.5 4.5-4.5M5 20h14',
+  file: 'M7 3h7l5 5v13H7zM14 3v5h5',
+  clip: 'M15.5 7.5l-6.8 6.8a2 2 0 002.8 2.8l7-7a4 4 0 00-5.6-5.6l-7.2 7.2a6 6 0 008.5 8.5l6.3-6.3',
+  nav: 'M3 11l18-8-8 18-2-8z',
   pagemenu: 'M5 7h14M5 12h14M5 17h9',
   share: 'M12 15V4M8 7.5l4-4 4 4M6.5 11H5v9h14v-9h-1.5',
   trash: 'M4 7h16M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5',
@@ -118,7 +121,11 @@ export function Sheet({ open, onClose, onBack, title, sub, children }: {
     <Drawer.Root open={open} onOpenChange={o => { if (!o) onClose(); }} direction={wide ? 'right' : 'bottom'}>
       <Drawer.Portal>
         <Drawer.Overlay className="scrim" />
-        <Drawer.Content className={`sheet ${wide ? 'side' : 'bottom'}`} aria-describedby={undefined}>
+        <Drawer.Content className={`sheet ${wide ? 'side' : 'bottom'}`} aria-describedby={undefined}
+          // a full-screen layer opened from the sheet (photo viewer) is not "outside" the sheet
+          onPointerDownOutside={e => { if ((e.target as Element | null)?.closest?.('[data-keep-sheet]')) e.preventDefault(); }}
+          onInteractOutside={e => { if ((e.target as Element | null)?.closest?.('[data-keep-sheet]')) e.preventDefault(); }}
+          onEscapeKeyDown={e => { if (document.querySelector('[data-keep-sheet]')) e.preventDefault(); }}>
           {!wide && <div className="handle" aria-hidden="true" />}
           <div className="sheet-h">
             {onBack && <button className="iconbtn back" onClick={onBack} aria-label="뒤로"><Icon name="back" size={20} /></button>}

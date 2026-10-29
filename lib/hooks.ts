@@ -3,7 +3,7 @@ import { getRedirectResult, onAuthStateChanged, type User } from 'firebase/auth'
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { toast } from './toast';
-import type { Check, Day, Item, Trip } from './types';
+import type { Attachment, Check, Day, Item, Trip } from './types';
 
 export function useAuthUser() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -43,14 +43,15 @@ export function useTripData(tripId: string | null) {
   const rawDays = useCol<Day>(tripId, 'days');
   const rawItems = useCol<Item>(tripId, 'items');
   const rawChecks = useCol<Check>(tripId, 'checklist');
+  const rawFiles = useCol<Attachment>(tripId, 'files');
   return useMemo(() => ({
-    ...buildTripData(rawDays ?? [], rawItems ?? [], rawChecks ?? []),
+    ...buildTripData(rawDays ?? [], rawItems ?? [], rawChecks ?? [], rawFiles ?? []),
     loaded: rawDays !== null && rawItems !== null && rawChecks !== null,
-  }), [rawDays, rawItems, rawChecks]);
+  }), [rawDays, rawItems, rawChecks, rawFiles]);
 }
 
 /** Joins the three collections into what the screens use: days by date, cards per day, checklist lookups. */
-export function buildTripData(rawDays: Day[], items: Item[], checks: Check[]) {
+export function buildTripData(rawDays: Day[], items: Item[], checks: Check[], files: Attachment[] = []) {
   const days = [...rawDays].sort((a, b) => a.date.localeCompare(b.date));
   const dayById = new Map(days.map(d => [d.id, d]));
   const itemById = new Map(items.map(i => [i.id, i]));
@@ -63,7 +64,8 @@ export function buildTripData(rawDays: Day[], items: Item[], checks: Check[]) {
   /** The day a checklist row belongs to: through its card, or directly. */
   const dayOfCheck = (c: Check) => c.scope === 'item' ? (c.itemId ? itemById.get(c.itemId)?.dayId : undefined) : c.scope === 'day' ? c.dayId ?? undefined : undefined;
   const allChecksOfDay = (id: string) => checks.filter(c => dayOfCheck(c) === id);
-  return { loaded: true, days, items, checks, dayById, itemById, itemsByDay, checksOfItem, checksOfDay, dayOfCheck, allChecksOfDay };
+  const filesOfItem = (id: string) => files.filter(f => f.itemId === id).sort((a, b) => a.order - b.order);
+  return { loaded: true, days, items, checks, files, dayById, itemById, itemsByDay, checksOfItem, checksOfDay, dayOfCheck, allChecksOfDay, filesOfItem };
 }
 
 /** Consecutive nights in the same lodging city, for the stays table and "숙박 2/4박". */

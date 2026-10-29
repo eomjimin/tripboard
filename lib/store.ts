@@ -2,7 +2,7 @@ import { arrayRemove, arrayUnion, deleteField, doc, setDoc, updateDoc, writeBatc
 import { db } from './firebase';
 import { toast } from './toast';
 import { addDays, uid } from './util';
-import type { Check, Day, Item, Scope, Trip } from './types';
+import type { Attachment, Check, Day, Item, Scope, Trip } from './types';
 
 /*
  * Firestore layout (every id is a UUID):
@@ -10,6 +10,7 @@ import type { Check, Day, Item, Scope, Trip } from './types';
  *   trips/{tripId}/days/{id}       date, title, place, lodging, note
  *   trips/{tripId}/items/{id}      dayId → days, order, cat, time, text
  *   trips/{tripId}/checklist/{id}  scope, itemId → items | null, dayId → days | null, text, done, order
+ *   trips/{tripId}/files/{id}      itemId → items, name, kind, data (data URL, < 1 MiB per document), size, order
  * Writes are not awaited: offline they resolve only after sync, while the local cache updates the screen at once.
  */
 // The development-only demo (?demo) has no trip on the server, so its writes are refused; say so plainly instead.
@@ -48,8 +49,9 @@ export function createTrip(email: string, f: { title: string; tag: string; start
   b.commit().catch(fail);
   return id;
 }
-export function deleteTrip(tripId: string, data: { days: Day[]; items: Item[]; checks: Check[] }) {
+export function deleteTrip(tripId: string, data: { days: Day[]; items: Item[]; checks: Check[]; files: Attachment[] }) {
   const b = writeBatch(db);
+  data.files.forEach(f => b.delete(T(tripId, 'files', f.id)));
   data.days.forEach(d => b.delete(T(tripId, 'days', d.id)));
   data.items.forEach(i => b.delete(T(tripId, 'items', i.id)));
   data.checks.forEach(c => b.delete(T(tripId, 'checklist', c.id)));
@@ -100,10 +102,11 @@ export function setDayDate(tripId: string, day: Day, date: string, days: Day[]) 
   b.commit().catch(fail);
   return other ?? null;
 }
-export function deleteDay(tripId: string, day: Day, items: Item[], checks: Check[]) {
+export function deleteDay(tripId: string, day: Day, items: Item[], checks: Check[], files: Attachment[]) {
   const b = writeBatch(db);
   const gone = new Set(items.filter(i => i.dayId === day.id).map(i => i.id));
   gone.forEach(id => b.delete(T(tripId, 'items', id)));
+  files.filter(f => gone.has(f.itemId)).forEach(f => b.delete(T(tripId, 'files', f.id)));
   checks.filter(c => (c.scope === 'item' && c.itemId && gone.has(c.itemId)) || (c.scope === 'day' && c.dayId === day.id))
     .forEach(c => b.update(T(tripId, 'checklist', c.id), link('none'))); // keep the checklist, unlinked
   b.delete(T(tripId, 'days', day.id));
@@ -118,9 +121,10 @@ export function addItem(tripId: string, dayId: string, f: { cat: string; time: s
 }
 export const updateItem = (tripId: string, id: string, patch: Partial<Omit<Item, 'id'>>) => { updateDoc(T(tripId, 'items', id), patch).catch(fail); };
 export const moveItem = (tripId: string, id: string, dayId: string, order: number) => updateItem(tripId, id, { dayId, order });
-/** Deleting a card keeps its checklist on the card's day. */
-export function deleteItem(tripId: string, item: Item, checks: Check[]) {
+/** Deleting a card keeps its checklist on the card's day; its attachments go with it. */
+export function deleteItem(tripId: string, item: Item, checks: Check[], files: Attachment[]) {
   const b = writeBatch(db);
+  files.filter(f => f.itemId === item.id).forEach(f => b.delete(T(tripId, 'files', f.id)));
   checks.filter(c => c.scope === 'item' && c.itemId === item.id).forEach(c => b.update(T(tripId, 'checklist', c.id), link('day', null, item.dayId)));
   b.delete(T(tripId, 'items', item.id));
   b.commit().catch(fail);
@@ -133,3 +137,7 @@ export function addCheck(tripId: string, text: string, scope: Scope, itemId?: st
 export const updateCheck = (tripId: string, id: string, patch: Partial<Pick<Check, 'text' | 'done'>>) => { updateDoc(T(tripId, 'checklist', id), patch).catch(fail); };
 export const relinkCheck = (tripId: string, id: string, scope: Scope, itemId?: string | null, dayId?: string | null) => { updateDoc(T(tripId, 'checklist', id), link(scope, itemId, dayId)).catch(fail); };
 export const deleteCheck = (tripId: string, id: string) => { import('firebase/firestore').then(m => m.deleteDoc(T(tripId, 'checklist', id))).catch(fail); };
+
+/* attachments (card files) */
+export const addAttachment = (tripId: string, f: Omit<Attachment, 'id'>) => { setDoc(T(tripId, 'files', uid()), f).catch(fail); };
+export const deleteAttachment = (tripId: string, id: string) => { import('firebase/firestore').then(m => m.deleteDoc(T(tripId, 'files', id))).catch(fail); };

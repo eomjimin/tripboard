@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { buildTripData, stayGroups, useTripData } from '@/lib/hooks';
 import { diff, dt, md, todayId, WD } from '@/lib/util';
 import { tone, TagsProvider, useTags } from '@/lib/tags';
-import type { Check, Day, Item, Trip } from '@/lib/types';
+import type { Attachment, Check, Day, Item, Trip } from '@/lib/types';
 import Board, { AddCard, NewDay } from './Board';
 import ChecklistView from './ChecklistView';
 import StaysView from './StaysView';
@@ -22,10 +22,10 @@ export default function TripView(props: Parameters<typeof TripScreen>[0]) {
 }
 
 function TripScreen({ trip, email, onBack, demo }: {
-  trip: Trip; email: string; onBack: () => void; demo?: { days: Day[]; items: Item[]; checks: Check[] };
+  trip: Trip; email: string; onBack: () => void; demo?: { days: Day[]; items: Item[]; checks: Check[]; files?: Attachment[] };
 }) {
   const live = useTripData(demo ? null : trip.id);
-  const demoData = useMemo(() => demo ? buildTripData(demo.days, demo.items, demo.checks) : null, [demo]);
+  const demoData = useMemo(() => demo ? buildTripData(demo.days, demo.items, demo.checks, demo.files) : null, [demo]);
   const data = demoData ?? live;
   const P = useTags();
   const [view, setView] = useState<View>('board');
