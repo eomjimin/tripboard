@@ -218,9 +218,10 @@ button.code { border: 0; cursor: pointer; }
 .addcard:hover { background: var(--sunk); }
 .col.newcol { background: transparent; box-shadow: inset 0 0 0 1px var(--line); flex-basis: 13.75rem; padding: var(--space-lg); gap: .625rem; }
 
-.fab { display: none; position: fixed; z-index: 41; right: max(1.25rem, env(safe-area-inset-right, 0px)); bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
-  width: 3.375rem; height: 3.375rem; border-radius: 50%; border: 0; background: var(--accent); color: #fff; align-items: center; justify-content: center;
+.fab { display: none; position: fixed; z-index: 41; right: max(1.25rem, env(safe-area-inset-right, 0px)); bottom: calc(4.625rem + max(.375rem, env(safe-area-inset-bottom, 0px) - .875rem));
+  width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 0; background: var(--accent); color: #fff; align-items: center; justify-content: center;
   box-shadow: 0 .375rem 1rem color-mix(in srgb, var(--accent) 35%, transparent); }
+.fab .ico { stroke-width: 2.4; } /* a slightly bolder + */
 
 /* forms */
 .form { display: grid; gap: .625rem; background: var(--col); border-radius: var(--radius-2xl); padding: .875rem; }
@@ -492,16 +493,21 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
 .screen.fit .board { flex: 1; min-height: 0; padding-bottom: var(--space-md); }
 .screen.fit .col { max-height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior-x: auto; overscroll-behavior-y: contain; scrollbar-width: thin; }
 .screen.fit .col > * { flex-shrink: 0; }
+/* a long day scrolls inside its column; "+ 카드 추가" stays pinned at the bottom of it */
+.screen.fit .cfoot { position: sticky; bottom: 0; z-index: 1; background: var(--col); border-radius: 0 0 var(--radius-3xl) var(--radius-3xl); }
 .wrap:has(> .screen.fit) { --pb: 1.5rem; }
 @media (max-width: 40em) {
-  .wrap:has(> .screen.fit) { --pb: calc(4.375rem + env(safe-area-inset-bottom, 0px)); }
+  /* room for the tab bar: its 3.625rem of buttons + a .375rem gap + its bottom padding, which only uses the home-bar inset minus .875rem;
+     the inset itself is already left out by html's padding, hence the max(… - inset) */
+  .wrap:has(> .screen.fit) { --pb: calc(4rem + max(.375rem - env(safe-area-inset-bottom, 0px), -.875rem)); }
   .screen.fit .col { scrollbar-width: none; }
   .screen.fit .col::-webkit-scrollbar { display: none; }
   .screen.fit .board { padding-bottom: var(--space-sm); }
 }
 /* + adds a date, on every screen size */
 .fab { display: flex; bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px)); }
-@media (max-width: 40em) { .fab { bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); } }
+/* phones: --space-lg above the tab bar, whose height follows the home-bar inset (see .bar .seg-ctl) */
+@media (max-width: 40em) { .fab { bottom: calc(4.625rem + max(.375rem, env(safe-area-inset-bottom, 0px) - .875rem)); } }
 .note-s.warn { color: var(--danger); }
 
 /* grouped navigation rows (여행 관리) */
