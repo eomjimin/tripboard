@@ -12,26 +12,34 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: light;
 }
+/* dark: follow the phone unless 설정 forces light (data-theme="light"), or forced dark (data-theme="dark"); lib/theme.ts */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #000000; --col: #141416; --surface: #1C1C1E; --sunk: #232326; --raise: #1C1C1E;
     --ink: #F2F2F7; --ink-2: #D1D1D6; --muted: #8E8E93; --faint: #5A5A5F; --line: #2C2C2E; --line-soft: #1C1C1E;
     --accent: #4C94FF; --accent-ink: #FFFFFF; --accent-soft: #14233D; --field: #1C1C1E;
     --ok: #34C38F; --warn: #F0B74E; --warn-bg: #2A2110; --danger: #FF6B78;
     --shadow: none; --lift: 0 1rem 2.5rem rgba(0, 0, 0, .6);
     color-scheme: dark;
+    --pc-red: #FF6B78; --pc-orange: #FF9A4D; --pc-amber: #F5B83D; --pc-green: #34C38F; --pc-teal: #3CC4D9;
+    --pc-blue: #4C94FF; --pc-purple: #A78BFA; --pc-pink: #F472B6; --pc-brown: #C99A78; --pc-slate: #9AA4B0;
   }
 }
+:root[data-theme="dark"] {
+    --paper: #000000; --col: #141416; --surface: #1C1C1E; --sunk: #232326; --raise: #1C1C1E;
+    --ink: #F2F2F7; --ink-2: #D1D1D6; --muted: #8E8E93; --faint: #5A5A5F; --line: #2C2C2E; --line-soft: #1C1C1E;
+    --accent: #4C94FF; --accent-ink: #FFFFFF; --accent-soft: #14233D; --field: #1C1C1E;
+    --ok: #34C38F; --warn: #F0B74E; --warn-bg: #2A2110; --danger: #FF6B78;
+    --shadow: none; --lift: 0 1rem 2.5rem rgba(0, 0, 0, .6);
+    color-scheme: dark;
+    --pc-red: #FF6B78; --pc-orange: #FF9A4D; --pc-amber: #F5B83D; --pc-green: #34C38F; --pc-teal: #3CC4D9;
+    --pc-blue: #4C94FF; --pc-purple: #A78BFA; --pc-pink: #F472B6; --pc-brown: #C99A78; --pc-slate: #9AA4B0;
+}
+:root[data-theme="light"] { color-scheme: light; }
 /* tag palette (places and card kinds, user-chosen) */
 :root {
   --pc-red: #F04452; --pc-orange: #FF7A1A; --pc-amber: #E09A00; --pc-green: #12B76A; --pc-teal: #0BA5BE;
   --pc-blue: #3182F6; --pc-purple: #8B5CF6; --pc-pink: #EC4899; --pc-brown: #A0714F; --pc-slate: #8B95A1;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --pc-red: #FF6B78; --pc-orange: #FF9A4D; --pc-amber: #F5B83D; --pc-green: #34C38F; --pc-teal: #3CC4D9;
-    --pc-blue: #4C94FF; --pc-purple: #A78BFA; --pc-pink: #F472B6; --pc-brown: #C99A78; --pc-slate: #9AA4B0;
-  }
 }
 
 /* Sizes: everything in rem, so the whole UI follows the root size below (and the reader's own browser text size).
@@ -146,15 +154,15 @@ button.kchip[aria-pressed="true"] { background: var(--ink); color: var(--paper);
 /* date strip: city runs on top (one line per stay), weekday, date */
 .dstrip { display: flex; overflow-x: auto; padding: var(--space-xs) 0 .625rem; scrollbar-width: none; }
 .dstrip::-webkit-scrollbar { display: none; }
-.dstrip button { flex: none; width: 2.875rem; border: 0; background: transparent; padding: 0 0 var(--space-3xs); display: flex; flex-direction: column; align-items: center; gap: .1875rem; color: var(--ink); }
-.run { align-self: stretch; height: 1.3125rem; margin: 0 0 var(--space-2xs); border-bottom: .1875rem solid var(--c); padding-left: var(--space-xs); font-size: var(--text-2xs); font-weight: 700; letter-spacing: .02em;
+.dstrip button { flex: none; width: 2.875rem; border: 0; background: transparent; padding: 0; display: flex; flex-direction: column; align-items: center; gap: var(--space-3xs); color: var(--ink); }
+.run { align-self: stretch; height: 1.125rem; margin: 0 0 var(--space-3xs); border-bottom: .1875rem solid var(--c); padding-left: var(--space-xs); font-size: var(--text-2xs); font-weight: 700; letter-spacing: .02em;
   color: var(--c); text-align: left; white-space: nowrap; overflow: visible; line-height: 1.0625rem; }
 .run.start { margin-left: .1875rem; border-bottom-left-radius: .125rem; padding-left: .1875rem; }
 .run.end { margin-right: .1875rem; border-bottom-right-radius: .125rem; }
 .run.none { border-bottom-color: var(--line); }
 .dstrip small { font-size: var(--text-2xs); color: var(--muted); font-weight: 500; }
 .dstrip small.we { color: var(--pc-red); }
-.dstrip b { width: 2.25rem; height: 2.25rem; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-lg); font-weight: 600; transition: background .15s, color .15s; }
+.dstrip b { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-lg); font-weight: 600; transition: background .15s, color .15s; }
 .dstrip button.is-today b { color: var(--accent); }
 .dstrip button[aria-current="true"] b { background: var(--ink); color: var(--paper); }
 .dstrip button.is-today[aria-current="true"] b { background: var(--accent); color: #fff; }
@@ -365,7 +373,7 @@ button.block { text-align: left; color: var(--ink); width: 100%; }
   .bar .seg-ctl .count { position: absolute; top: -.25rem; left: calc(50% + .375rem); font-size: var(--text-3xs); min-width: 1rem; line-height: 1rem; }
   .pill-bg { display: none; }
   .filternote .kchip { margin: .875rem 0 0; }
-  .dstrip { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; margin: .625rem -1.25rem 0; padding: var(--space-sm) .875rem .625rem;
+  .dstrip { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; margin: 0 -1.25rem; padding: 0 .875rem var(--space-sm);
     background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: saturate(1.8) blur(1.25rem); -webkit-backdrop-filter: saturate(1.8) blur(1.25rem); }
   .board { scroll-snap-type: x mandatory; margin: 0 -1.25rem; padding: var(--space-2xs) var(--space-xl) 1.125rem; scroll-padding: 0 1.25rem; gap: .625rem; scrollbar-width: none; }
   .board::-webkit-scrollbar { display: none; }
@@ -545,7 +553,7 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
 .dstrip b > span { position: relative; }
 .dstrip button[aria-current="true"] b, .dstrip button.is-today[aria-current="true"] b { background: transparent; }
 .dstrip { position: relative; }
-.dsel { position: absolute; left: 0; top: 0; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--ink); pointer-events: none;
+.dsel { position: absolute; left: 0; top: 0; width: 2rem; height: 2rem; border-radius: 50%; background: var(--ink); pointer-events: none;
   transition: transform .38s cubic-bezier(.22, .9, .25, 1), background .2s; will-change: transform; }
 .dsel.today { background: var(--accent); }
 .dstrip button { position: relative; z-index: 1; }
@@ -652,3 +660,25 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
 .sheet-t .title-in:focus { border-color: var(--accent); background: var(--surface); outline: none; }
 .block-h.with-add b { flex: none; } /* + sits right after the title, 편집 at the far right */
 .block-h .att-edit { flex: none; }
+/* the date strip folds from a chevron at the end of the 날짜 line (open by default) */
+.dstrip-fold { flex: none; overflow: hidden; }
+@media (max-width: 40em) {
+  .dstrip-fold { margin-inline: -1.25rem; }
+  .dstrip-fold .dstrip { margin-inline: 0; }
+}
+.strip-toggle { margin-left: auto; margin-block: -.25rem; /* no taller than the 날짜 line, so it sits at the same height on every tab */ display: grid; place-items: center; width: 1.625rem; height: 1.625rem; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); padding: 0; }
+.strip-toggle:active { background: var(--sunk); }
+.strip-toggle > span { display: grid; }
+/* 여정 관리 tab: the trip's own settings as a page */
+.tripmgmt { max-width: 36rem; }
+/* 설정 → 화면 모드: three tiles */
+.theme-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-sm); }
+.theme-pick button { display: grid; justify-items: center; gap: var(--space-xs); padding: var(--space-md) var(--space-xs); border: 0; border-radius: var(--radius-xl);
+  background: var(--sunk); color: var(--ink-2); font-size: var(--text-md); font-weight: 600; transition: background .15s, color .15s; }
+.theme-pick button[aria-checked="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* phones: the tabs live in the bottom bar, so the header itself keeps the gap to whatever comes next (date strip, board, list, form);
+   the same on every tab, and nothing jumps when the date strip folds */
+@media (max-width: 40em) {
+  .top { margin-bottom: var(--space-lg); }
+  .viewpane > .sheetview > :first-child { margin-top: 0; } /* the checklist bar and stays table had their own top margin for the desktop tab row */
+}

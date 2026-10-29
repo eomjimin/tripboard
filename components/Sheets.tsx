@@ -9,7 +9,8 @@ import { dt, md, uid, WD } from '@/lib/util';
 import type { Cat, Check, Day, Item, Trip } from '@/lib/types';
 import { PlaceChip, PlaceEditor } from './PlaceSelect';
 import { CardAttach } from './CardExtras';
-import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Icon, InlineField, Swatches, Tick } from './ui';
+import { type Theme, useTheme } from '@/lib/theme';
+import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Icon, type IconName, InlineField, Swatches, Tick } from './ui';
 
 /** Checklist rows. Normally they can only be ticked; with `editable` the text can be changed and rows removed. */
 export function CheckRows({ trip, rows, editable }: { trip: Trip; rows: Check[]; editable?: boolean }) {
@@ -292,6 +293,27 @@ export function MembersSheet({ trip, email, onLeft }: { trip: Trip; email: strin
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const THEMES: [Theme, string, IconName][] = [['system', '시스템', 'phone'], ['light', '라이트', 'sun'], ['dark', '다크', 'moon']];
+
+/** App settings (⋯ in the top bar): for now the screen mode, kept on this device. */
+export function SettingsSheet() {
+  const [theme, setTheme] = useTheme();
+  return (
+    <div className="stack">
+      <div className="lab">화면 모드
+        <div className="theme-pick" role="radiogroup" aria-label="화면 모드">
+          {THEMES.map(([k, l, ic]) => (
+            <motion.button key={k} type="button" role="radio" aria-checked={theme === k} whileTap={{ scale: .95 }} onClick={() => setTheme(k)}>
+              <Icon name={ic} size="xl" /><span>{l}</span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+      <p className="note-s">시스템은 휴대폰 설정을 따라갑니다. 이 기기에만 저장됩니다.</p>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { TripData } from '@/lib/hooks';
 import { stayGroups } from '@/lib/hooks';
 import { addDay, addItem, deleteDay, moveItem, setDayDate, syncRange, updateDay } from '@/lib/store';
@@ -20,8 +20,8 @@ import { PlaceSelect } from './PlaceSelect';
 type Cols = Record<string, string[]>;
 let lastDragEnd = 0; // a drop must not also count as a tap that opens the card
 
-export default function Board({ trip, data, catFilter, openCard, openDay, addCard, addDay }: {
-  trip: Trip; data: TripData; catFilter: string | null; openCard: (id: string) => void; openDay: (id: string) => void;
+export default function Board({ trip, data, stripOpen, catFilter, openCard, openDay, addCard, addDay }: {
+  trip: Trip; data: TripData; stripOpen: boolean; catFilter: string | null; openCard: (id: string) => void; openDay: (id: string) => void;
   addCard: (dayId: string) => void; addDay: () => void;
 }) {
   const P = useTags();
@@ -110,11 +110,11 @@ export default function Board({ trip, data, catFilter, openCard, openDay, addCar
     place();
     window.addEventListener('resize', place);
     return () => window.removeEventListener('resize', place);
-  }, [current, days]);
+  }, [current, days, stripOpen]);
   useEffect(() => { // keep the current date visible in the strip
     const s = stripRef.current, b = s?.querySelector<HTMLElement>('[aria-current="true"]');
     if (s && b) s.scrollTo({ left: b.offsetLeft - s.offsetLeft - s.clientWidth / 2 + b.clientWidth / 2, behavior: 'smooth' });
-  }, [current]);
+  }, [current, stripOpen]);
 
   const stays = useMemo(() => {
     const m = new Map<string, { n: number; total: number }>();
@@ -125,22 +125,28 @@ export default function Board({ trip, data, catFilter, openCard, openDay, addCar
 
   return (
     <>
-      <nav className="dstrip" aria-label="날짜로 이동" ref={stripRef}>
-        {sel && <span className={`dsel ${sel.today ? 'today' : ''}`} style={{ transform: `translate(${sel.x}px, ${sel.y}px)` }} aria-hidden="true" />}
-        {days.map((d, i) => {
-          const today = d.date === todayId();
-          const prev = days[i - 1], next = days[i + 1];
-          const runStart = !prev || prev.place !== d.place, runEnd = !next || next.place !== d.place;
-          return (
-            <motion.button key={d.id} whileTap={{ scale: .9 }} aria-current={current === d.id} className={today ? 'is-today' : ''}
-              style={{ '--c': P.color(d.place) } as React.CSSProperties} onClick={() => scrollTo(d.id)}>
-              <span className={`run ${d.place ? '' : 'none'} ${runStart ? 'start' : ''} ${runEnd ? 'end' : ''}`}>{runStart && d.place ? P.code(d.place) : ''}</span>
-              <small className={isWeekend(d.date) ? 'we' : ''}>{today ? '오늘' : WD[dt(d.date).getUTCDay()]}</small>
-              <b><span>{dt(d.date).getUTCDate()}</span></b>
-            </motion.button>
-          );
-        })}
-      </nav>
+      <AnimatePresence initial={false}>
+        {stripOpen && (
+          <motion.div key="strip" className="dstrip-fold" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .22, ease: [.2, .8, .2, 1] }}>
+            <nav className="dstrip" aria-label="날짜로 이동" ref={stripRef}>
+              {sel && <span className={`dsel ${sel.today ? 'today' : ''}`} style={{ transform: `translate(${sel.x}px, ${sel.y}px)` }} aria-hidden="true" />}
+              {days.map((d, i) => {
+                const today = d.date === todayId();
+                const prev = days[i - 1], next = days[i + 1];
+                const runStart = !prev || prev.place !== d.place, runEnd = !next || next.place !== d.place;
+                return (
+                  <motion.button key={d.id} whileTap={{ scale: .9 }} aria-current={current === d.id} className={today ? 'is-today' : ''}
+                    style={{ '--c': P.color(d.place) } as React.CSSProperties} onClick={() => scrollTo(d.id)}>
+                    <span className={`run ${d.place ? '' : 'none'} ${runStart ? 'start' : ''} ${runEnd ? 'end' : ''}`}>{runStart && d.place ? P.code(d.place) : ''}</span>
+                    <small className={isWeekend(d.date) ? 'we' : ''}>{today ? '오늘' : WD[dt(d.date).getUTCDay()]}</small>
+                    <b><span>{dt(d.date).getUTCDate()}</span></b>
+                  </motion.button>
+                );
+              })}
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onStart} onDragOver={onOver} onDragEnd={onEnd}
         onDragCancel={() => { setActiveId(null); setCols(base); }} autoScroll={{ threshold: { x: .18, y: .12 }, acceleration: 12 }}>
         <div className={`board ${activeId ? 'dragging' : ''}`} ref={boardRef} onScroll={onScroll}>

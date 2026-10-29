@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { THEME_INIT } from '@/lib/theme-init';
 
 const DESCRIPTION = '날짜별로 함께 짜는 여행 일정';
 const KAKAO_ESCAPE = `(function(){var u=navigator.userAgent;if(!/kakaotalk/i.test(u))return;
@@ -24,10 +25,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
         {/* Leave KakaoTalk's in-app browser before anything else loads (it can't install the app or keep a Google login). */}
         <script dangerouslySetInnerHTML={{ __html: KAKAO_ESCAPE }} />
+        {/* a forced light/dark theme, before the first paint (lib/theme-init.ts) */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
       </head>
       <body>{children}</body>

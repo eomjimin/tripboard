@@ -10,6 +10,7 @@ import TripView from './TripView';
 import Toaster from './Toaster';
 import InstallButton from './Install';
 import { inKakao, isMobile, isStandalone, openOutsideKakao } from '@/lib/install';
+import { syncTheme } from '@/lib/theme';
 
 function useServiceWorker() {
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function App() {
   const email = user?.email?.toLowerCase() ?? null;
   const trips = useTrips(email);
   const [tripId, setTripId] = useState<string | null>(() => location.hash.slice(1) || lastTrip.get());
+  useEffect(syncTheme, []);
   useEffect(() => {
     const on = () => { const id = location.hash.slice(1) || null; setTripId(id); if (id) lastTrip.set(id); }; // an invite link opened while the app runs
     window.addEventListener('hashchange', on);

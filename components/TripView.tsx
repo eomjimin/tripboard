@@ -9,14 +9,14 @@ import type { Attachment, Check, Day, Item, Trip } from '@/lib/types';
 import Board, { AddCard, NewDay } from './Board';
 import ChecklistView from './ChecklistView';
 import StaysView from './StaysView';
-import { CardSheet, DaySheet, MembersSheet, TagManager, TripSettingsSheet } from './Sheets';
+import { CardSheet, DaySheet, MembersSheet, SettingsSheet, TagManager, TripSettingsSheet } from './Sheets';
 import { PlaceEditor } from './PlaceSelect';
 import { CatChip, EditToggle, Icon, type IconName, InlineField, Sheet } from './ui';
 
 export type SheetState = { kind: 'card'; id: string } | { kind: 'day'; id: string } | { kind: 'add'; dayId: string } | { kind: 'newday' }
-  | { kind: 'place'; name: string } | { kind: 'tags' } | { kind: 'members' } | { kind: 'trip' } | { kind: 'filter' };
-type View = 'board' | 'check' | 'stay';
-const VIEWS: [View, string, IconName][] = [['board', '일정', 'board'], ['check', '체크리스트', 'checks'], ['stay', '숙박', 'bed']];
+  | { kind: 'place'; name: string } | { kind: 'tags' } | { kind: 'members' } | { kind: 'settings' } | { kind: 'filter' };
+type View = 'board' | 'check' | 'stay' | 'trip';
+const VIEWS: [View, string, IconName][] = [['board', '일정', 'board'], ['check', '체크리스트', 'checks'], ['stay', '숙박', 'bed'], ['trip', '여정 관리', 'suitcase']];
 
 export default function TripView(props: Parameters<typeof TripScreen>[0]) {
   return <TagsProvider trip={props.trip}><TripScreen {...props} /></TagsProvider>;
@@ -30,6 +30,9 @@ function TripScreen({ trip, email, onBack, demo }: {
   const data = demoData ?? live;
   const P = useTags();
   const [view, setView] = useState<View>('board');
+  // the date strip above the board folds away from the 날짜 line; open by default, remembered on this device
+  const [stripOpen, setStripOpen] = useState(() => { try { return localStorage.getItem('tripboard.strip') !== 'closed'; } catch { return true; } });
+  const toggleStrip = () => setStripOpen(o => { try { localStorage.setItem('tripboard.strip', o ? 'closed' : 'open'); } catch {} return !o; });
   const [catFilter, setCatFilter] = useState<string | null>(null);
   // Sheets stack: one opened from inside another (e.g. 태그 관리 from 카드 추가) returns to it with ‹.
   const [stack, setStack] = useState<SheetState[]>([]);
@@ -104,9 +107,9 @@ function TripScreen({ trip, email, onBack, demo }: {
   } else if (sheet?.kind === 'members') {
     sheetTitle = '함께하는 사람'; sheetSub = `${(trip.members || []).length}명`;
     sheetBody = <MembersSheet trip={trip} email={email} onLeft={() => { closeAll(); onBack(); }} />;
-  } else if (sheet?.kind === 'trip') {
-    sheetTitle = '여행 관리'; sheetSub = trip.title;
-    sheetBody = <TripSettingsSheet trip={trip} data={data} email={email} onDeleted={() => { closeAll(); onBack(); }} openTags={manageTags} openMembers={() => openSheet({ kind: 'members' })} />;
+  } else if (sheet?.kind === 'settings') {
+    sheetTitle = '설정';
+    sheetBody = <SettingsSheet />;
   }
 
   return (
@@ -121,7 +124,7 @@ function TripScreen({ trip, email, onBack, demo }: {
                 <Icon name="filter" size="xl" />
               </motion.button>
             )}
-            <motion.button className="iconbtn" onClick={() => openSheet({ kind: 'trip' })} whileTap={{ scale: .9 }} aria-label="여행 관리">
+            <motion.button className="iconbtn" onClick={() => openSheet({ kind: 'settings' })} whileTap={{ scale: .9 }} aria-label="설정">
               <Icon name="more" size="2xl" />
             </motion.button>
           </div>
@@ -129,6 +132,11 @@ function TripScreen({ trip, email, onBack, demo }: {
         <div className="sub">
           {dday && <span className="dday">{dday}</span>}
           <span>{span}</span>
+          {view === 'board' && data.days.length > 0 && (
+            <button type="button" className="strip-toggle" onClick={toggleStrip} aria-expanded={stripOpen} aria-label={stripOpen ? '날짜 줄 접기' : '날짜 줄 펼치기'}>
+              <motion.span animate={{ rotate: stripOpen ? -90 : 0 }} transition={{ duration: .2 }}><Icon name="back" size="sm" /></motion.span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -156,10 +164,11 @@ function TripScreen({ trip, email, onBack, demo }: {
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={view} className="viewpane" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: .18 }}>
           {!data.loaded ? <p className="muted">일정을 불러오는 중입니다…</p>
-            : view === 'board' ? <Board trip={trip} data={data} catFilter={catFilter} openCard={id => openSheet({ kind: 'card', id })}
+            : view === 'board' ? <Board trip={trip} data={data} stripOpen={stripOpen} catFilter={catFilter} openCard={id => openSheet({ kind: 'card', id })}
                 openDay={id => openSheet({ kind: 'day', id })} addCard={dayId => openSheet({ kind: 'add', dayId })} addDay={() => openSheet({ kind: 'newday' })} />
             : view === 'check' ? <ChecklistView trip={trip} data={data} openCard={id => openSheet({ kind: 'card', id })} openDay={jump} />
-            : <StaysView days={data.days} groups={groups} onJump={jump} onPlace={name => openSheet({ kind: 'place', name })} />}
+            : view === 'stay' ? <StaysView days={data.days} groups={groups} onJump={jump} onPlace={name => openSheet({ kind: 'place', name })} />
+            : <div className="tripmgmt"><TripSettingsSheet trip={trip} data={data} email={email} onDeleted={onBack} openTags={manageTags} openMembers={() => openSheet({ kind: 'members' })} /></div>}
         </motion.div>
       </AnimatePresence>
 
