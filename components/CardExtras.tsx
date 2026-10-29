@@ -9,7 +9,7 @@ import { addAttachment, deleteAttachment, updateItem } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { uid } from '@/lib/util';
 import type { Attachment, Item, PlaceRef, Trip } from '@/lib/types';
-import { ConfirmButton, Fold, Icon } from './ui';
+import { ConfirmButton, Icon, Section } from './ui';
 
 /** Files on a card (boarding passes, ticket QRs …): add several at once, tap to see full screen. */
 export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
@@ -28,25 +28,21 @@ export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripDa
     }
   };
   return (
-    <Fold title="첨부" count={files.length}>
-      <div className="att-grid">
+    <Section title="첨부" count={files.length} onAdd={() => input.current?.click()} addLabel="사진·PDF 첨부" busy={busy > 0}>
+      {files.length > 0 && <div className="att-grid">
         {files.map(f => (
           <motion.button key={f.id} className="att" whileTap={{ scale: .95 }} onClick={() => (f.kind === 'pdf' ? openPdf(f) : setView(f.id))} aria-label={`${f.name} 열기`}>
             {f.kind === 'image' ? <img src={f.data} alt="" /> : <span className="att-pdf"><Icon name="file" size={26} />PDF</span>}
             <small>{f.name}</small>
           </motion.button>
         ))}
-        <motion.button className="att add" whileTap={{ scale: .95 }} onClick={() => input.current?.click()} disabled={busy > 0}>
-          <Icon name={busy ? 'clip' : 'plus'} size={22} /><small>{busy ? '올리는 중…' : '사진·PDF'}</small>
-        </motion.button>
-      </div>
-      {!files.length && <p className="note-s">탑승권 QR 캡처나 e-티켓을 올려 두면, 인터넷이 없어도 열 수 있어요.</p>}
+      </div>}
       <input ref={input} type="file" accept="image/*,application/pdf" multiple hidden
         onChange={e => { const l = Array.from(e.target.files ?? []); e.target.value = ''; if (l.length) add(l); }} />
       <AnimatePresence>
         {view && <Viewer trip={trip} files={images} start={view} onClose={() => setView(null)} />}
       </AnimatePresence>
-    </Fold>
+    </Section>
   );
 }
 
@@ -97,7 +93,7 @@ export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; i
   const near = useMemo(() => (anchor ? { lat: anchor.lat!, lng: anchor.lng! } : undefined), [anchor?.lat, anchor?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = (next: PlaceRef[]) => updateItem(trip.id, item.id, { places: next });
   return (
-    <Fold title="장소" count={places.length}>
+    <Section title="장소" count={places.length} onAdd={() => setAdding(a => !a)} addLabel="장소 추가">
       {places.map(p => (
         <div key={p.id} className="prow">
           <Icon name="pin" size={18} />
@@ -106,10 +102,8 @@ export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; i
           <ConfirmButton compact label={`${p.name} 빼기`} confirm="" onConfirm={() => save(places.filter(x => x.id !== p.id))} />
         </div>
       ))}
-      {adding
-        ? <PlaceSearch near={near} onPick={p => { save([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />
-        : <button className="addcard" onClick={() => setAdding(true)}><Icon name="plus" size={16} />장소 추가</button>}
-    </Fold>
+      {adding && <PlaceSearch near={near} onPick={p => { save([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />}
+    </Section>
   );
 }
 

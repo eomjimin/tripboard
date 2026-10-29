@@ -14,7 +14,7 @@ import { toast } from '@/lib/toast';
 import { addDays, between, diff, dt, isWeekend, md, todayId, vibrate, WD } from '@/lib/util';
 import { tone, useTags } from '@/lib/tags';
 import type { Day, Item, Trip } from '@/lib/types';
-import { CatPicker, ConfirmButton, Icon } from './ui';
+import { CatPicker, ConfirmButton, EditToggle, Icon } from './ui';
 import { PlaceSelect } from './PlaceSelect';
 
 type Cols = Record<string, string[]>;
@@ -213,7 +213,7 @@ function DayColumn({ trip, data, day, ids, stay, catFilter, openCard, openDay, a
   );
 }
 
-/** The column header in edit mode, in place: every field of the day, saved together with 저장. */
+/** The column header in edit mode, in place: every field of the day, saved together with 완료 (like a card's edit mode); delete sits at the bottom. */
 function DayEditor({ trip, data, day, onDone }: { trip: Trip; data: TripData; day: Day; onDone: () => void }) {
   const [f, setF] = useState({ date: day.date, title: day.title, place: day.place, lodging: day.lodging, note: day.note });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
@@ -238,12 +238,7 @@ function DayEditor({ trip, data, day, onDone }: { trip: Trip; data: TripData; da
         <input type="date" className="date-in" value={f.date} onChange={set('date')} required aria-label="날짜" />
         <span className="dnum">DAY {diff(first, day.date) + 1}</span>
         <span className="grow" />
-        <ConfirmButton icon label="이 날짜 삭제" title={`${md(day.date)} 일정을 삭제할까요?`} confirm={items.length ? `카드 ${items.length}개도 함께 지워지고 되돌릴 수 없습니다.` : '되돌릴 수 없습니다.'}
-          onConfirm={() => {
-            deleteDay(trip.id, day, data.items, data.checks, data.files);
-            syncRange(trip, data.days.filter(x => x.id !== day.id).map(x => x.date));
-            toast(`${md(day.date)} 일정을 삭제했습니다.`);
-          }} />
+        <EditToggle editing onToggle={save} />
       </div>
       {f.date !== day.date && data.days.some(x => x.date === f.date && x.id !== day.id) && <p className="note-s">이미 있는 날짜라 두 날의 일정이 서로 바뀝니다.</p>}
       <input className="title-in" value={f.title} onChange={set('title')} placeholder="제목 (예: 바르셀로나 → 포르투)" aria-label="제목" autoFocus />
@@ -251,8 +246,14 @@ function DayEditor({ trip, data, day, onDone }: { trip: Trip; data: TripData; da
       <PlaceSelect trip={trip} days={data.days} value={f.lodging} onChange={lodging => setF(x => ({ ...x, lodging }))} placeholder="숙박 도시 (없으면 비워 두기)" emptyLabel="숙박 없음" />
       <textarea value={f.note} onChange={set('note')} rows={2} placeholder="메모 (예: 기차 시간 재확인)" aria-label="메모" />
       <div className="actions">
-        <button type="button" className="btn sec" onClick={onDone}>취소</button>
-        <button className="btn">저장</button>
+        <ConfirmButton label="날짜 삭제" title={`${md(day.date)} 일정을 삭제할까요?`} confirm={items.length ? `카드 ${items.length}개도 함께 지워지고 되돌릴 수 없습니다.` : '되돌릴 수 없습니다.'}
+          onConfirm={() => {
+            deleteDay(trip.id, day, data.items, data.checks, data.files);
+            syncRange(trip, data.days.filter(x => x.id !== day.id).map(x => x.date));
+            toast(`${md(day.date)} 일정을 삭제했습니다.`);
+          }} />
+        <span className="grow" />
+        <button type="button" className="linkbtn quiet" onClick={onDone}>취소</button>
       </div>
     </motion.form>
   );

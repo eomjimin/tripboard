@@ -184,22 +184,21 @@ export function AddLine({ placeholder, onAdd, label }: { placeholder: string; on
   );
 }
 
-/** A card section that folds: starts open only when it has something in it, the header toggles it. */
-export function Fold({ title, count, label, children }: { title: string; count: number; label?: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(count > 0);
+/** A card section under a hairline: title, count and + in one line; the body shows only when there is something in it. */
+export function Section({ title, count, onAdd, addLabel, busy, children }: {
+  title: string; count?: React.ReactNode; onAdd?: () => void; addLabel?: string; busy?: boolean; children?: React.ReactNode;
+}) {
   return (
-    <section className="block fold">
-      <button type="button" className="block-h link" onClick={() => setOpen(o => !o)} aria-expanded={open}>
-        <b>{title}</b>{(label || count > 0) && <span className="n">{label ?? count}</span>}
-        <motion.span className="fold-chev" animate={{ rotate: open ? 90 : -90 }} transition={{ duration: .2 }}><Icon name="back" size={16} /></motion.span>
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div className="fold-body" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .2 }}>
-            <div className="fold-in">{children}</div>
-          </motion.div>
+    <section className="sect">
+      <div className="sect-h">
+        <b>{title}</b>{count ? <span className="n">{count}</span> : null}
+        {onAdd && (
+          <motion.button type="button" whileTap={{ scale: .88 }} className="iconbtn sm" onClick={onAdd} disabled={busy} aria-label={addLabel ?? `${title} 추가`}>
+            <Icon name={busy ? 'clip' : 'plus'} size={20} />
+          </motion.button>
         )}
-      </AnimatePresence>
+      </div>
+      {children}
     </section>
   );
 }

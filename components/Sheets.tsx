@@ -9,7 +9,7 @@ import { dt, md, uid, WD } from '@/lib/util';
 import type { Cat, Check, Day, Item, Trip } from '@/lib/types';
 import { PlaceChip, PlaceEditor } from './PlaceSelect';
 import { CardAttachments, CardPlaces } from './CardExtras';
-import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Fold, Icon, InlineField, Swatches, Tick } from './ui';
+import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Icon, InlineField, Section, Swatches, Tick } from './ui';
 
 /** Checklist rows. Normally they can only be ticked; with `editable` the text can be changed and rows removed. */
 export function CheckRows({ trip, rows, editable }: { trip: Trip; rows: Check[]; editable?: boolean }) {
@@ -35,7 +35,7 @@ const dayLabel = (d?: Day) => d ? `${md(d.date)} (${WD[dt(d.date).getUTCDay()]})
 
 /** A card: opens read-only (tick its checklist); ✎ switches to editing. */
 export function CardSheet({ trip, data, item, onClose, onManage }: { trip: Trip; data: TripData; item: Item; onClose: () => void; onManage: () => void }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(false), [addingCheck, setAddingCheck] = useState(false);
   const checks = data.checksOfItem(item.id), n = checks.filter(c => c.done).length;
   return (
     <div className="stack">
@@ -74,9 +74,10 @@ export function CardSheet({ trip, data, item, onClose, onManage }: { trip: Trip;
           </div>
           <CardAttachments trip={trip} data={data} item={item} />
           <CardPlaces trip={trip} data={data} item={item} />
-          <Fold title="체크리스트" count={checks.length} label={checks.length ? `${n}/${checks.length}` : undefined}>
-            {checks.length ? <CheckRows trip={trip} rows={checks} /> : <p className="muted small">체크리스트가 없습니다. ✎ 편집에서 추가할 수 있습니다.</p>}
-          </Fold>
+          <Section title="체크리스트" count={checks.length ? `${n}/${checks.length}` : null} onAdd={() => setAddingCheck(a => !a)} addLabel="체크리스트 추가">
+            {checks.length > 0 && <CheckRows trip={trip} rows={checks} />}
+            {addingCheck && <AddLine placeholder="체크할 것 (예: 입장권 예매)" label="체크리스트 추가" onAdd={t => addCheck(trip.id, t, 'item', item.id)} />}
+          </Section>
         </>
       )}
     </div>
