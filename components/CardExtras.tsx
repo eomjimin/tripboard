@@ -13,15 +13,16 @@ import { ConfirmButton, Icon } from './ui';
 
 /**
  * What hangs off a card, like attachments on a mail: photos and PDFs (boarding passes, ticket QRs) as small thumbnails,
- * places as rows that open Google Maps; each under a hairline with a small + to add. Removing them is for ✎ edit mode.
+ * places as rows that open Google Maps; a small + adds, and each part's own 편집 shows the remove buttons.
  */
-export function CardAttach({ trip, data, item, editable }: { trip: Trip; data: TripData; item: Item; editable?: boolean }) {
+export function CardAttach({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
   const files = data.filesOfItem(item.id);
   const images = files.filter(f => f.kind === 'image');
   const places = item.places ?? [];
   const [view, setView] = useState<string | null>(null);
   const [busy, setBusy] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [editFiles, setEditFiles] = useState(false), [editPlaces, setEditPlaces] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   // Rank search results near where this trip already is: this card's places first, then any card's.
   const anchor = [...places, ...data.items.flatMap(i => i.places ?? [])].find(x => x.lat != null && x.lng != null);
@@ -40,20 +41,21 @@ export function CardAttach({ trip, data, item, editable }: { trip: Trip; data: T
     <div className="attach">
       <section className="att-sec">
         <div className="att-h">
-          <Icon name="clip" size={15} /><b>파일</b>{files.length > 0 && <span className="n">{files.length}</span>}
+          <Icon name="clip" size="md" /><b>파일</b>{files.length > 0 && <span className="n">{files.length}</span>}
           <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => input.current?.click()} disabled={busy > 0} aria-label="파일 추가">
-            <Icon name={busy ? 'clip' : 'plus'} size={14} />
+            <Icon name={busy ? 'clip' : 'plus'} size="sm" />
           </motion.button>
           {busy > 0 && <small className="n">올리는 중…</small>}
+          {files.length > 0 && <button type="button" className={`att-edit ${editFiles ? 'on' : ''}`} onClick={() => setEditFiles(e => !e)} aria-label={editFiles ? '파일 편집 끝내기' : '파일 편집'} aria-pressed={editFiles}><Icon name={editFiles ? 'check' : 'edit'} size="md" /></button>}
         </div>
         {files.length > 0 && (
           <div className="thumbs">
             {files.map(f => (
               <div key={f.id} className="thumb-w">
                 <motion.button className="thumb" whileTap={{ scale: .94 }} onClick={() => (f.kind === 'pdf' ? openPdf(f) : setView(f.id))} aria-label={`${f.name} 열기`}>
-                  {f.kind === 'image' ? <img src={f.data} alt="" /> : <span className="thumb-pdf"><Icon name="file" size={18} />PDF</span>}
+                  {f.kind === 'image' ? <img src={f.data} alt="" /> : <span className="thumb-pdf"><Icon name="file" size="lg" />PDF</span>}
                 </motion.button>
-                {editable && <button type="button" className="thumb-x" onClick={() => { deleteAttachment(trip.id, f.id); toast('파일을 삭제했습니다.'); }} aria-label={`${f.name} 삭제`}><Icon name="x" size={12} /></button>}
+                {editFiles && <button type="button" className="thumb-x" onClick={() => { deleteAttachment(trip.id, f.id); toast('파일을 삭제했습니다.'); }} aria-label={`${f.name} 삭제`}><Icon name="x" size="xs" /></button>}
               </div>
             ))}
           </div>
@@ -61,19 +63,27 @@ export function CardAttach({ trip, data, item, editable }: { trip: Trip; data: T
       </section>
       <section className="att-sec">
         <div className="att-h">
-          <Icon name="pin" size={15} /><b>장소</b>{places.length > 0 && <span className="n">{places.length}</span>}
+          <Icon name="pin" size="md" /><b>장소</b>{places.length > 0 && <span className="n">{places.length}</span>}
           <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => setAdding(a => !a)} aria-label="장소 추가" aria-expanded={adding}>
-            <Icon name="plus" size={14} />
+            <Icon name="plus" size="sm" />
           </motion.button>
+          {places.length > 0 && <button type="button" className={`att-edit ${editPlaces ? 'on' : ''}`} onClick={() => setEditPlaces(e => !e)} aria-label={editPlaces ? '장소 편집 끝내기' : '장소 편집'} aria-pressed={editPlaces}><Icon name={editPlaces ? 'check' : 'edit'} size="md" /></button>}
         </div>
         {places.map(p => (
           <div key={p.id} className="pl">
-            <a className="pl-link" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
-              <Icon name="pin" size={15} />
-              <span className="pl-t"><b>{p.name}</b>{p.address && <small>{p.address}</small>}</span>
-              <span className="navbtn sm"><Icon name="nav" size={13} />지도</span>
-            </a>
-            {editable && <ConfirmButton compact label={`${p.name} 빼기`} confirm="" onConfirm={() => savePlaces(places.filter(x => x.id !== p.id))} />}
+            {editPlaces ? ( // while removing places, a row is just its name: no map button, no link to tap by mistake
+              <div className="pl-link">
+                <Icon name="pin" size="md" />
+                <span className="pl-t"><b>{p.name}</b>{p.address && <small>{p.address}</small>}</span>
+              </div>
+            ) : (
+              <a className="pl-link" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
+                <Icon name="pin" size="md" />
+                <span className="pl-t"><b>{p.name}</b>{p.address && <small>{p.address}</small>}</span>
+                <span className="navbtn sm"><Icon name="nav" size="sm" />지도</span>
+              </a>
+            )}
+            {editPlaces && <button type="button" className="iconbtn sm danger" onClick={() => savePlaces(places.filter(x => x.id !== p.id))} aria-label={`${p.name} 빼기`}><Icon name="trash" size="lg" /></button>}
           </div>
         ))}
         {adding && <PlaceSearch near={near} onPick={p => { savePlaces([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />}
@@ -107,7 +117,7 @@ function Viewer({ trip, files, start, onClose }: { trip: Trip; files: Attachment
     <motion.div className="viewer" data-keep-sheet="" role="dialog" aria-label={f.name} style={{ pointerEvents: 'auto' }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .15 }}>
       <div className="viewer-top">
-        <button className="iconbtn" onClick={onClose} aria-label="닫기"><Icon name="x" size={22} /></button>
+        <button className="iconbtn" onClick={onClose} aria-label="닫기"><Icon name="x" size="2xl" /></button>
         <span className="viewer-name">{f.name}{files.length > 1 && <small> {i + 1}/{files.length}</small>}</span>
         <ConfirmButton compact label={`${f.name} 삭제`} confirm="" onConfirm={() => { deleteAttachment(trip.id, f.id); setI(n => Math.max(0, n - 1)); toast('파일을 삭제했습니다.'); }} />
       </div>
@@ -116,8 +126,8 @@ function Viewer({ trip, files, start, onClose }: { trip: Trip; files: Attachment
         initial={{ opacity: 0, scale: .98 }} animate={{ opacity: 1, scale: 1 }} />
       {files.length > 1 && (
         <div className="viewer-nav">
-          <button className="iconbtn" disabled={i === 0} onClick={() => setI(i - 1)} aria-label="이전"><Icon name="back" size={22} /></button>
-          <button className="iconbtn fwd" disabled={i === files.length - 1} onClick={() => setI(i + 1)} aria-label="다음"><Icon name="back" size={22} /></button>
+          <button className="iconbtn" disabled={i === 0} onClick={() => setI(i - 1)} aria-label="이전"><Icon name="back" size="2xl" /></button>
+          <button className="iconbtn fwd" disabled={i === files.length - 1} onClick={() => setI(i + 1)} aria-label="다음"><Icon name="back" size="2xl" /></button>
         </div>
       )}
     </motion.div>,
@@ -160,12 +170,12 @@ function PlaceSearch({ near, onPick, onCancel }: { near?: { lat: number; lng: nu
         <div className="phits">
           {hits.map(h => (
             <button key={h.id} className="phit" onClick={() => onPick(h)}>
-              <Icon name="pin" size={16} /><span><b>{h.name}</b>{h.address && <small>{h.address}</small>}</span>
+              <Icon name="pin" size="md" /><span><b>{h.name}</b>{h.address && <small>{h.address}</small>}</span>
             </button>
           ))}
           {!hits.length && <p className="note-s">검색 결과가 없어요. 영어나 현지어로 찾아보거나, 아래처럼 이름 그대로 저장하세요.</p>}
           <button className="phit plain" onClick={() => onPick({ id: uid(), name: query })}>
-            <Icon name="plus" size={16} /><span><b>‘{query}’ 이름 그대로 저장</b><small>지도에서 구글맵이 이 이름으로 찾아요</small></span>
+            <Icon name="plus" size="md" /><span><b>‘{query}’ 이름 그대로 저장</b><small>지도에서 구글맵이 이 이름으로 찾아요</small></span>
           </button>
         </div>
       )}

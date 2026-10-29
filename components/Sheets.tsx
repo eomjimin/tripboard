@@ -34,17 +34,15 @@ export function CheckRows({ trip, rows, editable }: { trip: Trip; rows: Check[];
 const dayLabel = (d?: Day) => d ? `${md(d.date)} (${WD[dt(d.date).getUTCDay()]})` : '';
 
 /**
- * A card. ✎ in the sheet header edits the card itself (kind, text, time, date; files and places can be removed there);
- * the checklist box has its own 편집, so ticking, adding and removing rows never needs the card's edit mode.
+ * A card. ✎ in the sheet header edits the card itself (the title turns into a field up there; time, date, kind here) and nothing else;
+ * files, places and the checklist each have their own 편집 for removing things.
  */
 export function CardSheet({ trip, data, item, editing, onClose, onManage }: {
   trip: Trip; data: TripData; item: Item; editing: boolean; onClose: () => void; onManage: () => void;
 }) {
   const checks = data.checksOfItem(item.id);
   if (editing) return (
-    <div className="stack">
-      <CatPicker value={item.cat} onChange={cat => updateItem(trip.id, item.id, { cat })} onManage={onManage} />
-      <label className="lab">내용<InlineField className="field big" value={item.text} label="내용" placeholder="할 일 또는 장소" onCommit={text => text && updateItem(trip.id, item.id, { text })} /></label>
+    <div className="stack cardedit">
       <div className="row2">
         <label className="lab">시간<InlineField className="field" value={item.time} label="시간" placeholder="예: 09:30" onCommit={time => updateItem(trip.id, item.id, { time })} /></label>
         <label className="lab">날짜
@@ -57,7 +55,7 @@ export function CardSheet({ trip, data, item, editing, onClose, onManage }: {
           </select>
         </label>
       </div>
-      <CardAttach trip={trip} data={data} item={item} editable />
+      <div className="lab">종류<CatPicker value={item.cat} onChange={cat => updateItem(trip.id, item.id, { cat })} onManage={onManage} /></div>
       <div className="sheet-foot">
         <ConfirmButton label="카드 삭제" title="이 카드를 삭제할까요?" confirm={checks.length ? '카드의 체크리스트는 이 날짜에 남습니다.' : '되돌릴 수 없습니다.'}
           onConfirm={() => { deleteItem(trip.id, item, data.checks, data.files); onClose(); toast('카드를 삭제했습니다.'); }} />
@@ -72,18 +70,22 @@ export function CardSheet({ trip, data, item, editing, onClose, onManage }: {
   );
 }
 
-/** A card's checklist in its own box: tick rows; 편집 there to rename or remove them; the add line shows while editing or when empty. */
+/** A card's checklist in its own box: tick rows; + opens the add line, 편집 lets rows be renamed or removed. */
 function CardChecklist({ trip, item, checks }: { trip: Trip; item: Item; checks: Check[] }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(false), [adding, setAdding] = useState(false);
   const n = checks.filter(c => c.done).length;
   return (
     <section className="block">
-      <div className="block-h">
+      <div className="block-h with-add">
         <b>체크리스트</b>{checks.length > 0 && <span className="n">{n}/{checks.length}</span>}
-        {checks.length > 0 && <EditToggle editing={editing} onToggle={() => setEditing(e => !e)} />}
+        <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => setAdding(a => !a)} aria-label="체크리스트 추가" aria-expanded={adding}>
+          <Icon name="plus" size="sm" />
+        </motion.button>
+        {checks.length > 0 && <button type="button" className={`att-edit ${editing ? 'on' : ''}`} onClick={() => setEditing(e => !e)} aria-label={editing ? '체크리스트 편집 끝내기' : '체크리스트 편집'} aria-pressed={editing}><Icon name={editing ? 'check' : 'edit'} size="md" /></button>}
       </div>
       {checks.length > 0 && <CheckRows trip={trip} rows={checks} editable={editing} />}
-      {(editing || !checks.length) && <AddLine placeholder="체크할 것 (예: 입장권 예매)" label="체크리스트 추가" onAdd={t => addCheck(trip.id, t, 'item', item.id)} />}
+      {!checks.length && !adding && <p className="muted small">+ 를 눌러 체크할 것을 추가하세요.</p>}
+      {adding && <AddLine placeholder="체크할 것 (예: 입장권 예매)" label="체크리스트 추가" onAdd={t => addCheck(trip.id, t, 'item', item.id)} />}
     </section>
   );
 }
@@ -174,7 +176,7 @@ export function TagManager({ trip, data }: { trip: Trip; data: TripData }) {
             {places.map(p => (
               <li key={p}>
                 <button className="tagrow link" onClick={() => setOpen(open === 'p:' + p ? null : 'p:' + p)} aria-expanded={open === 'p:' + p}>
-                  <PlaceChip name={p} /><span /><Icon name="more" size={18} />
+                  <PlaceChip name={p} /><span /><Icon name="more" size="lg" />
                 </button>
                 <AnimatePresence initial={false}>
                   {open === 'p:' + p && (
@@ -210,10 +212,10 @@ export function TripSettingsSheet({ trip, data, email, onDeleted, openTags, open
       <label className="lab">부제 (예: 출발·도착 공항)<InlineField className="field" value={trip.tag} label="부제" placeholder="예: BCN in · BCN out" onCommit={v => updateTrip(trip.id, { tag: v })} /></label>
       <div className="navgroup">
       <button className="navrow" onClick={openMembers}>
-        <Icon name="people" size={20} /><span><b>함께하는 사람</b><small>{(trip.members || []).length}명{trip.owner === email ? ' · 초대하고 뺄 수 있어요' : ''}</small></span><Icon name="back" size={16} />
+        <Icon name="people" size="xl" /><span><b>함께하는 사람</b><small>{(trip.members || []).length}명{trip.owner === email ? ' · 초대하고 뺄 수 있어요' : ''}</small></span><Icon name="back" size="md" />
       </button>
       <button className="navrow" onClick={openTags}>
-        <Icon name="tag" size={20} /><span><b>태그 관리</b><small>장소 태그 {placeOptions(trip, data.days).length}개 · 카드 종류 {T.cats.length}개</small></span><Icon name="back" size={16} />
+        <Icon name="tag" size="xl" /><span><b>태그 관리</b><small>장소 태그 {placeOptions(trip, data.days).length}개 · 카드 종류 {T.cats.length}개</small></span><Icon name="back" size="md" />
       </button>
       </div>
       {trip.owner === email ? (
@@ -270,8 +272,8 @@ export function MembersSheet({ trip, email, onLeft }: { trip: Trip; email: strin
           <AnimatePresence initial={false}>
             {sent ? (
               <motion.div key="sent" className="invite-next" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <p><Icon name="check" size={16} /><span><b>{sent}</b> 님을 추가했어요. 아직 알림은 가지 않았으니 링크를 보내 주세요.</span></p>
-                <button type="button" className="btn big" onClick={() => shareInvite(trip, sent)}><Icon name="share" size={18} />초대 링크 보내기</button>
+                <p><Icon name="check" size="md" /><span><b>{sent}</b> 님을 추가했어요. 아직 알림은 가지 않았으니 링크를 보내 주세요.</span></p>
+                <button type="button" className="btn big" onClick={() => shareInvite(trip, sent)}><Icon name="share" size="lg" />초대 링크 보내기</button>
               </motion.div>
             ) : (
               <motion.p key="hint" className="note-s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

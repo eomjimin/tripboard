@@ -31,9 +31,14 @@ const ICONS = {
 };
 export type IconName = keyof typeof ICONS;
 
-export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+/** Icon sizes in rem, on the same t-shirt names as the text and space scales in globals.css. */
+const ICON_SIZE = { xs: .75, sm: .875, md: 1, lg: 1.125, xl: 1.25, '2xl': 1.375, '3xl': 1.5, '4xl': 1.625 } as const;
+export type IconSize = keyof typeof ICON_SIZE;
+
+export function Icon({ name, size = 'lg' }: { name: IconName; size?: IconSize }) {
   return (
-    <svg className="ico" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+    // size goes through a CSS variable, so a stylesheet rule (e.g. the bottom tab bar) can still size an icon
+    <svg className="ico" style={{ '--ico': `${ICON_SIZE[size]}rem` } as React.CSSProperties} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[name]} /></svg>
   );
 }
@@ -74,7 +79,7 @@ export function CatPicker({ value, onChange, onManage }: { value: string; onChan
         <motion.button key={c.key} type="button" role="radio" aria-checked={cur === c.key} whileTap={{ scale: .92 }}
           className="kopt" style={{ '--k': tone(c.color) } as React.CSSProperties} onClick={() => onChange(c.key)}>{c.name}</motion.button>
       ))}
-      {onManage && <motion.button type="button" whileTap={{ scale: .92 }} className="kopt manage" onClick={onManage}><Icon name="edit" size={13} />편집</motion.button>}
+      {onManage && <motion.button type="button" whileTap={{ scale: .92 }} className="kopt manage" onClick={onManage}><Icon name="edit" size="sm" />편집</motion.button>}
     </div>
   );
 }
@@ -83,7 +88,7 @@ export function CatPicker({ value, onChange, onManage }: { value: string; onChan
 export function EditToggle({ editing, onToggle, label = '편집' }: { editing: boolean; onToggle: () => void; label?: string }) {
   return (
     <motion.button type="button" whileTap={{ scale: .92 }} className={`edit-toggle ${editing ? 'on' : ''}`} onClick={onToggle} aria-pressed={editing}>
-      {editing ? '완료' : <><Icon name="edit" size={14} />{label}</>}
+      {editing ? '완료' : <><Icon name="edit" size="sm" />{label}</>}
     </motion.button>
   );
 }
@@ -117,7 +122,7 @@ export function Tick({ done, onToggle, label, disabled }: { done: boolean; onTog
 export function Sheet({ open, onClose, onBack, title, sub, actions, tall, children }: {
   open: boolean; onClose: () => void; onBack?: () => void; title: React.ReactNode; sub?: React.ReactNode; actions?: React.ReactNode; tall?: boolean; children: React.ReactNode;
 }) {
-  const wide = useMedia('(min-width: 760px)');
+  const wide = useMedia('(min-width: 47.5em)');
   return (
     <Drawer.Root open={open} onOpenChange={o => { if (!o) onClose(); }} direction={wide ? 'right' : 'bottom'}>
       <Drawer.Portal>
@@ -129,7 +134,7 @@ export function Sheet({ open, onClose, onBack, title, sub, actions, tall, childr
           onEscapeKeyDown={e => { if (document.querySelector('[data-keep-sheet]')) e.preventDefault(); }}>
           {!wide && <div className="handle" aria-hidden="true" />}
           <div className="sheet-h">
-            {onBack && <button className="iconbtn back" onClick={onBack} aria-label="뒤로"><Icon name="back" size={20} /></button>}
+            {onBack && <button className="iconbtn back" onClick={onBack} aria-label="뒤로"><Icon name="back" size="xl" /></button>}
             <div className="sheet-tt"><Drawer.Title className="sheet-t">{title}</Drawer.Title></div>
             {actions}
             <button className="x" onClick={onClose} aria-label="닫기">×</button>
@@ -150,12 +155,12 @@ export function ConfirmButton({ label, title, confirm, onConfirm, compact, icon 
   useEffect(() => { if (!armed || !compact) return; const t = setTimeout(() => setArmed(false), 4000); return () => clearTimeout(t); }, [armed, compact]);
   if (compact) return armed
     ? <span className="confirm-inline">{confirm && <small>{confirm}</small>}<motion.button initial={{ scale: .8 }} animate={{ scale: 1 }} type="button" className="pill danger" onClick={onConfirm}>삭제</motion.button></span>
-    : <button type="button" className="iconbtn sm" onClick={() => setArmed(true)} aria-label={label}><Icon name="trash" size={17} /></button>;
+    : <button type="button" className="iconbtn sm" onClick={() => setArmed(true)} aria-label={label}><Icon name="trash" size="lg" /></button>;
   return (
     <>
       {icon
-        ? <button type="button" className="iconbtn sm danger" onClick={() => setArmed(true)} aria-label={label}><Icon name="trash" size={17} /></button>
-        : <button type="button" className="dangerlink" onClick={() => setArmed(true)}><Icon name="trash" size={16} />{label}</button>}
+        ? <button type="button" className="iconbtn sm danger" onClick={() => setArmed(true)} aria-label={label}><Icon name="trash" size="lg" /></button>
+        : <button type="button" className="dangerlink" onClick={() => setArmed(true)}><Icon name="trash" size="md" />{label}</button>}
       <AnimatePresence>
         {armed && (
           <motion.div className="confirm-pop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setArmed(false)}>

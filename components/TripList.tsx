@@ -30,7 +30,7 @@ export default function TripList({ trips, email, onOpen }: { trips: Trip[]; emai
         <b>{x.title || '이름 없는 여행'}</b>
         <span className="tc-foot">
           <span className="tc-dates">{x.start ? `${x.start.replace(/-/g, '.')} – ${md(x.end).replace('/', '.')} · ${n}박 ${(n ?? 0) + 1}일` : '날짜 미정'}</span>
-          <span className="tc-who"><Icon name="people" size={14} />{(x.members || []).length}</span>
+          <span className="tc-who"><Icon name="people" size="sm" />{(x.members || []).length}</span>
         </span>
       </motion.button>
     );
@@ -47,13 +47,13 @@ export default function TripList({ trips, email, onOpen }: { trips: Trip[]; emai
       </header>
       <section className="trips">
         {upcoming.map(card)}
-        <motion.button className="tripcard addtrip" onClick={() => setCreating(true)} whileTap={{ scale: .98 }}><Icon name="plus" size={22} />새 여행 만들기</motion.button>
+        <motion.button className="tripcard addtrip" onClick={() => setCreating(true)} whileTap={{ scale: .98 }}><Icon name="plus" size="2xl" />새 여행 만들기</motion.button>
       </section>
       {past.length > 0 && <><h2 className="past-h">지난 여행</h2><section className="trips past">{past.map(card)}</section></>}
       <Sheet open={acct} onClose={() => setAcct(false)} title="계정" sub={email}>
         <div className="stack">
           <p className="note-s">이 계정으로 초대된 여행만 목록에 보입니다.</p>
-          <button className="btn sec big" onClick={() => signOut(auth)}><Icon name="out" size={18} />로그아웃</button>
+          <button className="btn sec big" onClick={() => signOut(auth)}><Icon name="out" size="lg" />로그아웃</button>
         </div>
       </Sheet>
       <Sheet open={creating} onClose={() => setCreating(false)} title="새 여행">

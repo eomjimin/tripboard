@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { buildTripData, stayGroups, useTripData } from '@/lib/hooks';
+import { updateItem } from '@/lib/store';
 import { diff, dt, md, todayId, WD } from '@/lib/util';
 import { tone, TagsProvider, useTags } from '@/lib/tags';
 import type { Attachment, Check, Day, Item, Trip } from '@/lib/types';
@@ -10,7 +11,7 @@ import ChecklistView from './ChecklistView';
 import StaysView from './StaysView';
 import { CardSheet, DaySheet, MembersSheet, TagManager, TripSettingsSheet } from './Sheets';
 import { PlaceEditor } from './PlaceSelect';
-import { CatChip, EditToggle, Icon, type IconName, Sheet } from './ui';
+import { CatChip, EditToggle, Icon, type IconName, InlineField, Sheet } from './ui';
 
 export type SheetState = { kind: 'card'; id: string } | { kind: 'day'; id: string } | { kind: 'add'; dayId: string } | { kind: 'newday' }
   | { kind: 'place'; name: string } | { kind: 'tags' } | { kind: 'members' } | { kind: 'trip' } | { kind: 'filter' };
@@ -63,7 +64,10 @@ function TripScreen({ trip, email, onBack, demo }: {
   if (sheet?.kind === 'card') {
     const it = data.itemById.get(sheet.id);
     const d = it ? data.dayById.get(it.dayId) : undefined;
-    sheetTitle = it?.text || '카드';
+    // editing: the title itself becomes the field for the card's text
+    sheetTitle = it && cardEditing
+      ? <InlineField className="title-in" value={it.text} label="내용" placeholder="할 일 또는 장소" onCommit={text => text && updateItem(trip.id, it.id, { text })} />
+      : it?.text || '카드';
     sheetSub = it && d ? <span className="cardsub"><CatChip cat={it.cat} />{it.time && <span className="time">{it.time}</span>}<span>{dayName(d)} · {d.title || '제목 없음'}</span></span> : null;
     sheetActions = it ? <EditToggle editing={cardEditing} onToggle={() => setCardEditing(e => !e)} /> : null;
     sheetBody = it ? <CardSheet trip={trip} data={data} item={it} editing={cardEditing} onClose={closeSheet} onManage={manageTags} /> : <p className="muted">삭제된 카드입니다.</p>;
@@ -109,16 +113,16 @@ function TripScreen({ trip, email, onBack, demo }: {
     <div className={`screen ${view === 'board' ? 'fit' : ''}`}>
       <header className="top">
         <div className="topbar">
-          <motion.button className="iconbtn" onClick={onBack} whileTap={{ scale: .9 }} aria-label="홈 (여행 목록)"><Icon name="home" size={22} /></motion.button>
+          <motion.button className="iconbtn" onClick={onBack} whileTap={{ scale: .9 }} aria-label="홈 (여행 목록)"><Icon name="home" size="2xl" /></motion.button>
           <div className="tb-title"><h1>{trip.title}</h1>{trip.tag && <span>{trip.tag}</span>}</div>
           <div className="tb-actions">
             {view === 'board' && (
               <motion.button className={`iconbtn ${catFilter ? 'on' : ''}`} onClick={() => openSheet({ kind: 'filter' })} whileTap={{ scale: .9 }} aria-label="종류별로 보기">
-                <Icon name="filter" size={21} />
+                <Icon name="filter" size="xl" />
               </motion.button>
             )}
             <motion.button className="iconbtn" onClick={() => openSheet({ kind: 'trip' })} whileTap={{ scale: .9 }} aria-label="여행 관리">
-              <Icon name="more" size={22} />
+              <Icon name="more" size="2xl" />
             </motion.button>
           </div>
         </div>
@@ -133,7 +137,7 @@ function TripScreen({ trip, email, onBack, demo }: {
           {VIEWS.map(([k, l, ic]) => (
             <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}>
               {view === k && <motion.span layoutId="tabpill" className="pill-bg" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
-              <span className="lbl"><Icon name={ic} size={20} /><span>{l}</span>{k === 'check' && open > 0 && <span className="count">{open}</span>}</span>
+              <span className="lbl"><Icon name={ic} size="xl" /><span>{l}</span>{k === 'check' && open > 0 && <span className="count">{open}</span>}</span>
             </button>
           ))}
         </nav>
@@ -143,7 +147,7 @@ function TripScreen({ trip, email, onBack, demo }: {
         {view === 'board' && filterCat && (
           <motion.div className="filternote" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
             <button className="kchip on" style={{ '--k': tone(filterCat.color) } as React.CSSProperties} onClick={() => setCatFilter(null)}>
-              {filterCat.name}만 보는 중<Icon name="x" size={13} />
+              {filterCat.name}만 보는 중<Icon name="x" size="sm" />
             </button>
           </motion.div>
         )}

@@ -13,7 +13,7 @@ export function PlaceChip({ name, onRemove }: { name: string; onRemove?: () => v
   return (
     <span className="ptag" style={{ '--c': P.color(name) } as React.CSSProperties}>
       <b>{P.code(name)}</b>{name}
-      {onRemove && <button type="button" className="ptag-x" onClick={e => { e.stopPropagation(); onRemove(); }} aria-label={`${name} 빼기`}><Icon name="x" size={12} /></button>}
+      {onRemove && <button type="button" className="ptag-x" onClick={e => { e.stopPropagation(); onRemove(); }} aria-label={`${name} 빼기`}><Icon name="x" size="xs" /></button>}
     </span>
   );
 }
@@ -62,13 +62,13 @@ export function PlaceSelect({ trip, days, value, onChange, placeholder, emptyLab
           <motion.div className="tsel-menu" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: .16 }}>
             <div className="tsel-h">{options.length ? '선택하거나 새로 만들기' : '이름을 입력해 첫 장소 태그를 만드세요'}</div>
             {emptyLabel && !query && (
-              <button type="button" className={`tsel-opt ${!value ? 'cur' : ''}`} onClick={() => pick('')}><span className="muted">{emptyLabel}</span>{!value && <Icon name="check" size={16} />}</button>
+              <button type="button" className={`tsel-opt ${!value ? 'cur' : ''}`} onClick={() => pick('')}><span className="muted">{emptyLabel}</span>{!value && <Icon name="check" size="md" />}</button>
             )}
             {shown.map(o => (
               <div key={o} className="tsel-row">
                 <div className="tsel-line">
-                  <button type="button" className={`tsel-opt ${o === value ? 'cur' : ''}`} onClick={() => pick(o)}><PlaceChip name={o} />{o === value && <Icon name="check" size={16} />}</button>
-                  <button type="button" className="iconbtn sm" onClick={() => setEditing(editing === o ? null : o)} aria-label={`${o} 태그 편집`} aria-expanded={editing === o}><Icon name="more" size={18} /></button>
+                  <button type="button" className={`tsel-opt ${o === value ? 'cur' : ''}`} onClick={() => pick(o)}><PlaceChip name={o} />{o === value && <Icon name="check" size="md" />}</button>
+                  <button type="button" className="iconbtn sm" onClick={() => setEditing(editing === o ? null : o)} aria-label={`${o} 태그 편집`} aria-expanded={editing === o}><Icon name="more" size="lg" /></button>
                 </div>
                 <AnimatePresence initial={false}>
                   {editing === o && (
@@ -124,7 +124,7 @@ export function PlaceEditor({ trip, days, name, onSaved, onDeleted }: {
         <label className="lab">이름<input className="field" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} onKeyDown={onKey} /></label>
         <label className="lab">짧은 표시<input className="field" value={f.code} maxLength={4} onChange={e => setF({ ...f, code: e.target.value.toUpperCase() })} onKeyDown={onKey} /></label>
         <motion.button type="button" className="savebtn" whileTap={{ scale: .9 }} disabled={!changed || !next.name || !next.code} onClick={save} aria-label="저장">
-          <Icon name="check" size={22} />
+          <Icon name="check" size="2xl" />
         </motion.button>
       </div>
       <Swatches value={f.color} onChange={color => setF({ ...f, color })} label={`${name} 색`} />

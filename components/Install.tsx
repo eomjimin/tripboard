@@ -9,11 +9,11 @@ export default function InstallButton({ big }: { big?: boolean }) {
   const inst = useInstall();
   const [help, setHelp] = useState(false);
   if (!inst) return null;
-  if (inst.kind === 'installed') return <p className="installed"><Icon name="check" size={16} />설치됐어요. 홈 화면의 <b>트립보드</b>를 열어 주세요.</p>;
+  if (inst.kind === 'installed') return <p className="installed"><Icon name="check" size="md" />설치됐어요. 홈 화면의 <b>트립보드</b>를 열어 주세요.</p>;
   return (
     <>
       <motion.button className={big ? 'btn big' : 'installbtn'} whileTap={{ scale: .95 }} onClick={() => (inst.kind === 'prompt' ? inst.run() : setHelp(true))}>
-        <Icon name="download" size={big ? 18 : 16} />앱으로 설치
+        <Icon name="download" size={big ? 'lg' : 'md'} />앱으로 설치
       </motion.button>
       {inst.kind === 'ios' && (
         <Sheet open={help} onClose={() => setHelp(false)} title="홈 화면에 추가" sub="아이폰은 Safari에서 이렇게 설치해요">
@@ -22,11 +22,11 @@ export default function InstallButton({ big }: { big?: boolean }) {
             <ol className="steps">
               {inst.menu ? (
                 <>
-                  <li><span className="stepn">1</span><span>아래 주소창 왼쪽의 <span className="kbd"><Icon name="pagemenu" size={16} /></span> 버튼을 누릅니다</span></li>
-                  <li><span className="stepn">2</span><span><b>공유</b> <span className="kbd"><Icon name="share" size={16} /></span> 를 누릅니다</span></li>
+                  <li><span className="stepn">1</span><span>아래 주소창 왼쪽의 <span className="kbd"><Icon name="pagemenu" size="md" /></span> 버튼을 누릅니다</span></li>
+                  <li><span className="stepn">2</span><span><b>공유</b> <span className="kbd"><Icon name="share" size="md" /></span> 를 누릅니다</span></li>
                 </>
               ) : (
-                <li><span className="stepn">1</span><span>화면 아래 <b>공유</b> 버튼 <span className="kbd"><Icon name="share" size={16} /></span> 을 누릅니다</span></li>
+                <li><span className="stepn">1</span><span>화면 아래 <b>공유</b> 버튼 <span className="kbd"><Icon name="share" size="md" /></span> 을 누릅니다</span></li>
               )}
               <li><span className="stepn">{inst.menu ? 3 : 2}</span><span>목록을 위로 올려 <b>홈 화면에 추가</b>를 누릅니다</span></li>
               <li><span className="stepn">{inst.menu ? 4 : 3}</span><span>오른쪽 위 <b>추가</b>를 누르면 홈 화면에 트립보드가 생깁니다</span></li>

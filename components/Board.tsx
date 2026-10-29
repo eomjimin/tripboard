@@ -157,7 +157,7 @@ export default function Board({ trip, data, catFilter, openCard, openDay, addCar
       {!activeId && (
         <motion.button className="fab" aria-label="날짜 추가" onClick={addDay}
           initial={{ scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} whileTap={{ scale: .88 }}>
-          <Icon name="plus" size={26} />
+          <Icon name="plus" size="4xl" />
         </motion.button>
       )}
     </>
@@ -183,18 +183,18 @@ function DayColumn({ trip, data, day, ids, stay, catFilter, openCard, openDay, a
             <span className="dnum">DAY {diff(first, day.date) + 1}</span>
             {day.date === todayId() && <em>오늘</em>}
           </button>
-          <motion.button whileTap={{ scale: .88 }} className="iconbtn sm" onClick={() => setEditing(true)} aria-label={`${md(day.date)} 편집`}><Icon name="edit" size={16} /></motion.button>
+          <motion.button whileTap={{ scale: .88 }} className="iconbtn sm" onClick={() => setEditing(true)} aria-label={`${md(day.date)} 편집`}><Icon name="edit" size="md" /></motion.button>
         </div>
         <h3 className={day.title ? '' : 'empty'}>{day.title || '제목 없음'}</h3>
         <div className="facts">
           {day.place && <span className="code">{P.code(day.place)}</span>}
           {day.place && <span>{day.place}</span>}
-          <span className={day.lodging ? '' : 'none'}><Icon name="bed" size={14} />{day.lodging || '숙박 없음'}{stay && <i className="stayn">{stay.n}/{stay.total}박</i>}</span>
+          <span className={day.lodging ? '' : 'none'}><Icon name="bed" size="sm" />{day.lodging || '숙박 없음'}{stay && <i className="stayn">{stay.n}/{stay.total}박</i>}</span>
         </div>
         {day.note && <p className="notebox">{day.note}</p>}
         {checks.length > 0 && (
           <button className={`dprog mini ${done === checks.length ? 'ok' : ''}`} onClick={() => openDay(day.id)} aria-label={`${md(day.date)} 체크리스트 ${done}/${checks.length}`}>
-            <Icon name="checks" size={14} /><span>체크리스트 {done}/{checks.length}</span>
+            <Icon name="checks" size="sm" /><span>체크리스트 {done}/{checks.length}</span>
             <span className="progress"><motion.i initial={false} animate={{ width: `${done / checks.length * 100}%` }} /></span>
           </button>
         )}
@@ -207,7 +207,7 @@ function DayColumn({ trip, data, day, ids, stay, catFilter, openCard, openDay, a
         </div>
       </SortableContext>
       <div className="cfoot">
-        <motion.button className="addcard" onClick={() => addCard(day.id)} whileTap={{ scale: .97 }}><Icon name="plus" size={16} />카드 추가</motion.button>
+        <motion.button className="addcard" onClick={() => addCard(day.id)} whileTap={{ scale: .97 }}><Icon name="plus" size="md" />카드 추가</motion.button>
       </div>
     </section>
   );
@@ -307,9 +307,9 @@ function CardFace({ item, data, lifted }: { item: Item; data: TripData; lifted?:
       <span className="txt">{item.text}</span>
       {(checks.length > 0 || files > 0 || places > 0) && (
         <span className="cbadges">
-          {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checks" size={13} />{n}/{checks.length}</span>}
-          {files > 0 && <span className="cbadge"><Icon name="clip" size={13} />{files}</span>}
-          {places > 0 && <span className="cbadge"><Icon name="pin" size={13} />{places}</span>}
+          {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checks" size="sm" />{n}/{checks.length}</span>}
+          {files > 0 && <span className="cbadge"><Icon name="clip" size="sm" />{files}</span>}
+          {places > 0 && <span className="cbadge"><Icon name="pin" size="sm" />{places}</span>}
         </span>
       )}
     </motion.div>
