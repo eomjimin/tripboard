@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import type { TripData } from '@/lib/hooks';
 import { openPdf, readAttachment } from '@/lib/attach';
-import { directionsUrl, hasHangul, isLink, placeFromLink, searchPlaces, suggestPlaces } from '@/lib/places';
+import { hasHangul, isLink, mapsUrl, placeFromLink, searchPlaces, suggestPlaces } from '@/lib/places';
 import { addAttachment, deleteAttachment, updateItem } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { uid } from '@/lib/util';
@@ -89,7 +89,7 @@ function Viewer({ trip, files, start, onClose }: { trip: Trip; files: Attachment
   );
 }
 
-/** Places on a card; each opens Google Maps directions from where you are. */
+/** Places on a card; each opens its page in Google Maps, where 경로 starts directions. */
 export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
   const places = item.places ?? [];
   const [adding, setAdding] = useState(false);
@@ -104,7 +104,7 @@ export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; i
         <div key={p.id} className="prow">
           <Icon name="pin" size={18} />
           <span className="pname"><b>{p.name}</b>{p.address && <small>{p.address}</small>}</span>
-          <a className="navbtn" href={directionsUrl(p)} target="_blank" rel="noopener noreferrer"><Icon name="nav" size={16} />길찾기</a>
+          <a className="navbtn" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer"><Icon name="nav" size={16} />지도</a>
           <ConfirmButton compact label={`${p.name} 빼기`} confirm="" onConfirm={() => save(places.filter(x => x.id !== p.id))} />
         </div>
       ))}
@@ -155,7 +155,7 @@ function PlaceSearch({ near, onPick, onCancel }: { near?: { lat: number; lng: nu
           ))}
           {!hits.length && <p className="note-s">검색 결과가 없어요. 영어나 현지어로 찾아보거나, 아래처럼 이름 그대로 저장하세요.</p>}
           <button className="phit plain" onClick={() => onPick({ id: uid(), name: query })}>
-            <Icon name="plus" size={16} /><span><b>‘{query}’ 이름 그대로 저장</b><small>길찾기 때 구글맵이 이 이름으로 찾아요</small></span>
+            <Icon name="plus" size={16} /><span><b>‘{query}’ 이름 그대로 저장</b><small>지도에서 구글맵이 이 이름으로 찾아요</small></span>
           </button>
         </div>
       )}

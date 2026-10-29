@@ -60,11 +60,10 @@ export function placeFromLink(link: string): PlaceRef {
 }
 
 /**
- * Google Maps directions from wherever the phone is to this place (transit first, switchable in the app).
- * The destination is the name and address, not the coordinates: coordinates show up as a dropped pin, a name finds the real place.
+ * The place's own page in Google Maps (name, photos, hours, and its 경로 button), so it works from anywhere, even before the trip.
+ * Searched by name and address, not coordinates: coordinates show up as a dropped pin. Pasted links open as they are.
  */
-export function directionsUrl(p: PlaceRef) {
-  if (p.url && !/\/place\//.test(p.url)) return p.url; // short share links can't be read here: open the place itself
-  const dest = [p.name, p.address].filter(Boolean).join(', ');
-  return `https://www.google.com/maps/dir/?api=1&travelmode=transit&destination=${encodeURIComponent(dest)}`;
+export function mapsUrl(p: PlaceRef) {
+  if (p.url) return p.url;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([p.name, p.address].filter(Boolean).join(', '))}`;
 }
