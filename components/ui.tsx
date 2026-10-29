@@ -7,6 +7,7 @@ import { PALETTE, tone, useTags } from '@/lib/tags';
 
 const ICONS = {
   back: 'M15 5l-7 7 7 7',
+  home: 'M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4.5v-5.5h-5V20H5a1 1 0 01-1-1z',
   people: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.5a3.5 3.5 0 010 6.5M18 14.8c1.9.7 3.2 2.4 3.5 5.2',
   edit: 'M15.5 4.5l4 4L9 19H5v-4z',
   plus: 'M12 5v14M5 12h14',
@@ -180,5 +181,25 @@ export function AddLine({ placeholder, onAdd, label }: { placeholder: string; on
       <input value={v} onChange={e => setV(e.target.value)} placeholder={placeholder} aria-label={label} autoComplete="off" enterKeyHint="done" />
       <motion.button whileTap={{ scale: .9 }} className="btn sec" disabled={!v.trim()}>추가</motion.button>
     </form>
+  );
+}
+
+/** A card section that folds: starts open only when it has something in it, the header toggles it. */
+export function Fold({ title, count, label, children }: { title: string; count: number; label?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(count > 0);
+  return (
+    <section className="block fold">
+      <button type="button" className="block-h link" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <b>{title}</b>{(label || count > 0) && <span className="n">{label ?? count}</span>}
+        <motion.span className="fold-chev" animate={{ rotate: open ? 90 : -90 }} transition={{ duration: .2 }}><Icon name="back" size={16} /></motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div className="fold-body" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .2 }}>
+            <div className="fold-in">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 }

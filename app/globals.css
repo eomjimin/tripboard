@@ -224,7 +224,8 @@ button.code { border: 0; cursor: pointer; }
 .field.big, .inl.field.big { font-size: 18px; font-weight: 600; }
 .actions, .form .actions, .dayedit .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
 .actions .note-s { margin-right: auto; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; } /* minmax: a wide <select> can't push the sheet sideways */
+.row2 .field { width: 100%; min-width: 0; }
 .dayedit { display: grid; gap: 16px; }
 .dayedit textarea { resize: vertical; }
 .withtag { display: flex; gap: 8px; align-items: center; }
@@ -588,3 +589,10 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
 .phit > span { min-width: 0; display: grid; }
 .phit b { font-weight: 600; font-size: 14.5px; }
 .phit.plain > .ico { color: var(--accent); }
+
+/* folding card sections (첨부 · 장소 · 체크리스트) */
+.block.fold { gap: 0; }
+.fold > .block-h { min-height: 24px; cursor: pointer; }
+.fold-chev { display: inline-flex; color: var(--muted); }
+.fold-body { overflow: hidden; }
+.fold-in { display: grid; gap: 8px; padding-top: 10px; }

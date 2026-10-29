@@ -104,7 +104,7 @@ function TripScreen({ trip, email, onBack, demo }: {
     <div className={`screen ${view === 'board' ? 'fit' : ''}`}>
       <header className="top">
         <div className="topbar">
-          <motion.button className="iconbtn" onClick={onBack} whileTap={{ scale: .9 }} aria-label="여행 목록"><Icon name="back" size={22} /></motion.button>
+          <motion.button className="iconbtn" onClick={onBack} whileTap={{ scale: .9 }} aria-label="홈 (여행 목록)"><Icon name="home" size={22} /></motion.button>
           <div className="tb-title"><h1>{trip.title}</h1>{trip.tag && <span>{trip.tag}</span>}</div>
           <div className="tb-actions">
             {view === 'board' && (

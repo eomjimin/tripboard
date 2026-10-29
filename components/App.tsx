@@ -33,6 +33,12 @@ function signIn() {
   });
 }
 
+/** The trip to reopen on launch (per device; nothing breaks if storage is unavailable). */
+const lastTrip = {
+  get: () => { try { return localStorage.getItem('tripboard.lastTrip'); } catch { return null; } },
+  set: (id: string | null) => { try { if (id) localStorage.setItem('tripboard.lastTrip', id); else localStorage.removeItem('tripboard.lastTrip'); } catch {} },
+};
+
 export default function App() {
   useServiceWorker();
   // KakaoTalk's in-app browser can't install the app: the script in <head> already sent the page to the default browser; this is the fallback
@@ -42,17 +48,19 @@ export default function App() {
   const user = useAuthUser();
   const email = user?.email?.toLowerCase() ?? null;
   const trips = useTrips(email);
-  const [tripId, setTripId] = useState<string | null>(() => location.hash.slice(1) || null);
+  const [tripId, setTripId] = useState<string | null>(() => location.hash.slice(1) || lastTrip.get());
   useEffect(() => {
-    const on = () => setTripId(location.hash.slice(1) || null);
+    const on = () => { const id = location.hash.slice(1) || null; setTripId(id); if (id) lastTrip.set(id); }; // an invite link opened while the app runs
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
   const trip = tripId && trips ? trips.find(t => t.id === tripId) : undefined;
   useEffect(() => { document.title = trip ? `${trip.title} · ${APP_NAME}` : APP_NAME; }, [trip]);
 
-  const open = (id: string) => { location.hash = id; window.scrollTo(0, 0); };
-  const back = () => { history.pushState(null, '', location.pathname); setTripId(null); };
+  // Opening a trip replaces the history entry instead of adding one, so a habitual edge swipe can't fall back out to the list;
+  // the home button is the only way out, and the app reopens the last trip until then.
+  const open = (id: string) => { history.replaceState(null, '', `#${id}`); setTripId(id); lastTrip.set(id); window.scrollTo(0, 0); };
+  const home = () => { history.replaceState(null, '', location.pathname); setTripId(null); lastTrip.set(null); };
 
   let screen: React.ReactNode;
   if (kakao) screen = (
@@ -75,7 +83,7 @@ export default function App() {
       <button className="btn big" onClick={signIn}>Google 계정으로 로그인</button>
     </Gate>
   );
-  else if (trip) screen = <TripView key={trip.id} trip={trip} email={email!} onBack={back} />;
+  else if (trip) screen = <TripView key={trip.id} trip={trip} email={email!} onBack={home} />;
   else screen = <TripList trips={trips!} email={email!} onOpen={open} />;
 
   return (

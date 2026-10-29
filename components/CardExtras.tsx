@@ -9,7 +9,7 @@ import { addAttachment, deleteAttachment, updateItem } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { uid } from '@/lib/util';
 import type { Attachment, Item, PlaceRef, Trip } from '@/lib/types';
-import { ConfirmButton, Icon } from './ui';
+import { ConfirmButton, Fold, Icon } from './ui';
 
 /** Files on a card (boarding passes, ticket QRs …): add several at once, tap to see full screen. */
 export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
@@ -28,8 +28,7 @@ export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripDa
     }
   };
   return (
-    <section className="block">
-      <div className="block-h"><b>첨부</b>{files.length > 0 && <span className="n">{files.length}</span>}</div>
+    <Fold title="첨부" count={files.length}>
       <div className="att-grid">
         {files.map(f => (
           <motion.button key={f.id} className="att" whileTap={{ scale: .95 }} onClick={() => (f.kind === 'pdf' ? openPdf(f) : setView(f.id))} aria-label={`${f.name} 열기`}>
@@ -47,7 +46,7 @@ export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripDa
       <AnimatePresence>
         {view && <Viewer trip={trip} files={images} start={view} onClose={() => setView(null)} />}
       </AnimatePresence>
-    </section>
+    </Fold>
   );
 }
 
@@ -98,8 +97,7 @@ export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; i
   const near = useMemo(() => (anchor ? { lat: anchor.lat!, lng: anchor.lng! } : undefined), [anchor?.lat, anchor?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = (next: PlaceRef[]) => updateItem(trip.id, item.id, { places: next });
   return (
-    <section className="block">
-      <div className="block-h"><b>장소</b>{places.length > 0 && <span className="n">{places.length}</span>}</div>
+    <Fold title="장소" count={places.length}>
       {places.map(p => (
         <div key={p.id} className="prow">
           <Icon name="pin" size={18} />
@@ -111,7 +109,7 @@ export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; i
       {adding
         ? <PlaceSearch near={near} onPick={p => { save([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />
         : <button className="addcard" onClick={() => setAdding(true)}><Icon name="plus" size={16} />장소 추가</button>}
-    </section>
+    </Fold>
   );
 }
 
