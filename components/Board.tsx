@@ -194,7 +194,7 @@ function DayColumn({ trip, data, day, ids, stay, catFilter, openCard, openDay, a
         {day.note && <p className="notebox">{day.note}</p>}
         {checks.length > 0 && (
           <button className={`dprog mini ${done === checks.length ? 'ok' : ''}`} onClick={() => openDay(day.id)} aria-label={`${md(day.date)} 체크리스트 ${done}/${checks.length}`}>
-            <Icon name="checks" size="sm" /><span>체크리스트 {done}/{checks.length}</span>
+            <Icon name="checkCircle" size="sm" /><span>체크리스트 {done}/{checks.length}</span>
             <span className="progress"><motion.i initial={false} animate={{ width: `${done / checks.length * 100}%` }} /></span>
           </button>
         )}
@@ -307,7 +307,7 @@ function CardFace({ item, data, lifted }: { item: Item; data: TripData; lifted?:
       <span className="txt">{item.text}</span>
       {(checks.length > 0 || files > 0 || places > 0) && (
         <span className="cbadges">
-          {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checks" size="sm" />{n}/{checks.length}</span>}
+          {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checkCircle" size="sm" />{n}/{checks.length}</span>}
           {files > 0 && <span className="cbadge"><Icon name="clip" size="sm" />{files}</span>}
           {places > 0 && <span className="cbadge"><Icon name="pin" size="sm" />{places}</span>}
         </span>
