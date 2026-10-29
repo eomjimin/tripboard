@@ -8,9 +8,11 @@ export type Trip = {
 };
 export type Cat = { key: string; name: string; color: string };
 export type Day = { id: string; date: string; title: string; place: string; lodging: string; note: string };
-export type Item = { id: string; dayId: string; order: number; cat: string; time: string; text: string; places?: PlaceRef[] };
+export type Item = { id: string; dayId: string; order: number; cat: string; time: string; text: string; places?: PlaceRef[]; links?: LinkRef[] };
 /** A place on a card (airport, station …): picked from search (with coordinates), typed as a name, or a pasted Google Maps link. */
 export type PlaceRef = { id: string; name: string; address?: string; lat?: number; lng?: number; url?: string };
+/** A web link on a card (booking page, ticket, menu …); title is optional, the site name shows otherwise. */
+export type LinkRef = { id: string; url: string; title?: string };
 /** A file on a card (boarding pass, ticket QR …), kept inline as a data URL so it opens offline from the local cache. */
 export type Attachment = { id: string; itemId: string; name: string; kind: 'image' | 'pdf'; data: string; size: number; order: number };
 /** scope says what the row hangs off; only the matching id is set, the other is null. */

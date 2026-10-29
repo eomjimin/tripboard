@@ -305,17 +305,18 @@ function SortableCard({ item, data, dim, onOpen }: { item: Item; data: TripData;
 function CardFace({ item, data, lifted }: { item: Item; data: TripData; lifted?: boolean }) {
   const cat = useTags().cat(item.cat);
   const checks = data.checksOfItem(item.id), n = checks.filter(c => c.done).length;
-  const files = data.filesOfItem(item.id).length, places = item.places?.length ?? 0;
+  const files = data.filesOfItem(item.id).length, places = item.places?.length ?? 0, links = item.links?.length ?? 0;
   return (
     <motion.div className={`card ${lifted ? 'lifted' : ''}`} style={{ '--k': tone(cat.color) } as React.CSSProperties} initial={lifted ? { scale: 1, rotate: 0 } : false}
       animate={lifted ? { scale: 1.04, rotate: -1.5 } : undefined} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
       <span className="cmeta"><span className="kname">{cat.name}</span>{item.time && <span className="time">{item.time}</span>}</span>
       <span className="txt">{item.text}</span>
-      {(checks.length > 0 || files > 0 || places > 0) && (
+      {(checks.length > 0 || files > 0 || places > 0 || links > 0) && (
         <span className="cbadges">
           {checks.length > 0 && <span className={`cbadge ${n === checks.length ? 'ok' : ''}`}><Icon name="checkCircle" size="sm" />{n}/{checks.length}</span>}
           {files > 0 && <span className="cbadge"><Icon name="clip" size="sm" />{files}</span>}
           {places > 0 && <span className="cbadge"><Icon name="pin" size="sm" />{places}</span>}
+          {links > 0 && <span className="cbadge"><Icon name="link" size="sm" />{links}</span>}
         </span>
       )}
     </motion.div>

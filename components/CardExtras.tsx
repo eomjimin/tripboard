@@ -8,12 +8,12 @@ import { hasHangul, isLink, mapsUrl, placeFromLink, searchPlaces, suggestPlaces 
 import { addAttachment, deleteAttachment, updateItem } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { uid } from '@/lib/util';
-import type { Attachment, Item, PlaceRef, Trip } from '@/lib/types';
+import type { Attachment, Item, LinkRef, PlaceRef, Trip } from '@/lib/types';
 import { ConfirmButton, Icon } from './ui';
 
 /**
  * What hangs off a card, like attachments on a mail: photos and PDFs (boarding passes, ticket QRs) as small thumbnails,
- * places as rows that open Google Maps; a small + adds, and each part's own 편집 shows the remove buttons.
+ * places as rows that open Google Maps, links as rows that open the page; a small + adds, and each part's own 편집 shows the remove buttons.
  */
 export function CardAttach({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
   const files = data.filesOfItem(item.id);
@@ -21,13 +21,15 @@ export function CardAttach({ trip, data, item }: { trip: Trip; data: TripData; i
   const places = item.places ?? [];
   const [view, setView] = useState<string | null>(null);
   const [busy, setBusy] = useState(0);
-  const [adding, setAdding] = useState(false);
-  const [editFiles, setEditFiles] = useState(false), [editPlaces, setEditPlaces] = useState(false);
+  const links = item.links ?? [];
+  const [adding, setAdding] = useState(false), [addingLink, setAddingLink] = useState(false);
+  const [editFiles, setEditFiles] = useState(false), [editPlaces, setEditPlaces] = useState(false), [editLinks, setEditLinks] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   // Rank search results near where this trip already is: this card's places first, then any card's.
   const anchor = [...places, ...data.items.flatMap(i => i.places ?? [])].find(x => x.lat != null && x.lng != null);
   const near = useMemo(() => (anchor ? { lat: anchor.lat!, lng: anchor.lng! } : undefined), [anchor?.lat, anchor?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
   const savePlaces = (next: PlaceRef[]) => updateItem(trip.id, item.id, { places: next });
+  const saveLinks = (next: LinkRef[]) => updateItem(trip.id, item.id, { links: next });
   const add = async (list: File[]) => {
     setBusy(list.length);
     let order = (files[files.length - 1]?.order ?? -1) + 1;
@@ -39,7 +41,7 @@ export function CardAttach({ trip, data, item }: { trip: Trip; data: TripData; i
   };
   return (
     <div className="attach">
-      <section className="att-sec">
+      <section className={`att-sec ${files.length ? 'has' : ''}`}>
         <div className="att-h">
           <Icon name="clip" size="md" /><b>파일</b>{files.length > 0 && <span className="n">{files.length}</span>}
           <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => input.current?.click()} disabled={busy > 0} aria-label="파일 추가">
@@ -61,7 +63,7 @@ export function CardAttach({ trip, data, item }: { trip: Trip; data: TripData; i
           </div>
         )}
       </section>
-      <section className="att-sec">
+      <section className={`att-sec ${places.length ? 'has' : ''}`}>
         <div className="att-h">
           <Icon name="pin" size="md" /><b>장소</b>{places.length > 0 && <span className="n">{places.length}</span>}
           <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => setAdding(a => !a)} aria-label="장소 추가" aria-expanded={adding}>
@@ -87,6 +89,29 @@ export function CardAttach({ trip, data, item }: { trip: Trip; data: TripData; i
           </div>
         ))}
         {adding && <PlaceSearch near={near} onPick={p => { savePlaces([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />}
+      </section>
+      <section className={`att-sec ${links.length ? 'has' : ''}`}>
+        <div className="att-h">
+          <Icon name="link" size="md" /><b>링크</b>{links.length > 0 && <span className="n">{links.length}</span>}
+          <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => setAddingLink(a => !a)} aria-label="링크 추가" aria-expanded={addingLink}>
+            <Icon name="plus" size="sm" />
+          </motion.button>
+          {links.length > 0 && <button type="button" className={`att-edit ${editLinks ? 'on' : ''}`} onClick={() => setEditLinks(e => !e)} aria-label={editLinks ? '링크 편집 끝내기' : '링크 편집'} aria-pressed={editLinks}><Icon name={editLinks ? 'check' : 'edit'} size="md" /></button>}
+        </div>
+        {links.map(l => {
+          const t = <span className="pl-t"><b>{l.title || host(l.url)}</b>{l.title && <small>{host(l.url)}</small>}</span>;
+          return (
+            <div key={l.id} className="pl">
+              {editLinks ? (
+                <div className="pl-link"><Icon name="link" size="md" />{t}</div>
+              ) : (
+                <a className="pl-link" href={l.url} target="_blank" rel="noopener noreferrer"><Icon name="link" size="md" />{t}<span className="pl-go"><Icon name="external" size="sm" /></span></a>
+              )}
+              {editLinks && <button type="button" className="iconbtn sm danger" onClick={() => saveLinks(links.filter(x => x.id !== l.id))} aria-label={`${l.title || host(l.url)} 빼기`}><Icon name="trash" size="lg" /></button>}
+            </div>
+          );
+        })}
+        {addingLink && <LinkAdd onAdd={l => { saveLinks([...links, l]); setAddingLink(false); }} onCancel={() => setAddingLink(false)} />}
       </section>
       <input ref={input} type="file" accept="image/*,application/pdf" multiple hidden
         onChange={e => { const l = Array.from(e.target.files ?? []); e.target.value = ''; if (l.length) add(l); }} />
@@ -185,5 +210,32 @@ function PlaceSearch({ near, onPick, onCancel }: { near?: { lat: number; lng: nu
       )}
       <button className="linkbtn quiet" onClick={onCancel}>취소</button>
     </div>
+  );
+}
+
+/** The site name for a link row: "booking.com" from https://www.booking.com/… */
+const host = (url: string) => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; } };
+
+/** Paste a link (https:// can be left off) and optionally name it; without a name the row shows the site. */
+function LinkAdd({ onAdd, onCancel }: { onAdd: (l: LinkRef) => void; onCancel: () => void }) {
+  const [url, setUrl] = useState(''), [title, setTitle] = useState('');
+  const save = () => {
+    const raw = url.trim();
+    if (!raw) return;
+    const full = /^[a-z][a-z\d+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+    try { if (!/^https?:$/.test(new URL(full).protocol)) throw 0; } catch { toast('링크 주소를 확인해 주세요.'); return; }
+    onAdd({ id: uid(), url: full, ...(title.trim() ? { title: title.trim() } : {}) });
+  };
+  return (
+    <form className="psearch" onSubmit={e => { e.preventDefault(); save(); }}>
+      <div className="addline">
+        <input value={url} onChange={e => setUrl(e.target.value)} placeholder="링크 붙여넣기" aria-label="링크 주소" autoFocus inputMode="url" autoCapitalize="off" autoCorrect="off" enterKeyHint="next" />
+      </div>
+      <div className="addline">
+        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="이름 (선택) 예: 숙소 예약" aria-label="링크 이름" enterKeyHint="done" />
+        <button className="btn" disabled={!url.trim()}>저장</button>
+      </div>
+      <button type="button" className="linkbtn quiet" onClick={onCancel}>취소</button>
+    </form>
   );
 }

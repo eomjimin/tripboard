@@ -36,7 +36,7 @@ const dayLabel = (d?: Day) => d ? `${md(d.date)} (${WD[dt(d.date).getUTCDay()]})
 
 /**
  * A card. ✎ in the sheet header edits the card itself (the title turns into a field up there; time, date, kind here) and nothing else;
- * files, places and the checklist each have their own 편집 for removing things.
+ * files, places, links and the checklist each have their own 편집 for removing things.
  */
 export function CardSheet({ trip, data, item, editing, onClose, onManage }: {
   trip: Trip; data: TripData; item: Item; editing: boolean; onClose: () => void; onManage: () => void;
