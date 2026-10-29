@@ -8,8 +8,8 @@ import { newPlaceTag, placeOptions, tone, useTags } from '@/lib/tags';
 import { dt, md, uid, WD } from '@/lib/util';
 import type { Cat, Check, Day, Item, Trip } from '@/lib/types';
 import { PlaceChip, PlaceEditor } from './PlaceSelect';
-import { CardAttachments, CardPlaces } from './CardExtras';
-import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Icon, InlineField, Section, Swatches, Tick } from './ui';
+import { CardAttach } from './CardExtras';
+import { AddLine, CatChip, CatPicker, ConfirmButton, EditToggle, Icon, InlineField, Swatches, Tick } from './ui';
 
 /** Checklist rows. Normally they can only be ticked; with `editable` the text can be changed and rows removed. */
 export function CheckRows({ trip, rows, editable }: { trip: Trip; rows: Check[]; editable?: boolean }) {
@@ -33,54 +33,58 @@ export function CheckRows({ trip, rows, editable }: { trip: Trip; rows: Check[];
 
 const dayLabel = (d?: Day) => d ? `${md(d.date)} (${WD[dt(d.date).getUTCDay()]})` : '';
 
-/** A card: opens read-only (tick its checklist); ✎ switches to editing. */
-export function CardSheet({ trip, data, item, onClose, onManage }: { trip: Trip; data: TripData; item: Item; onClose: () => void; onManage: () => void }) {
-  const [editing, setEditing] = useState(false), [addingCheck, setAddingCheck] = useState(false);
-  const checks = data.checksOfItem(item.id), n = checks.filter(c => c.done).length;
+/**
+ * A card. ✎ in the sheet header edits the card itself (kind, text, time, date; files and places can be removed there);
+ * the checklist box has its own 편집, so ticking, adding and removing rows never needs the card's edit mode.
+ */
+export function CardSheet({ trip, data, item, editing, onClose, onManage }: {
+  trip: Trip; data: TripData; item: Item; editing: boolean; onClose: () => void; onManage: () => void;
+}) {
+  const checks = data.checksOfItem(item.id);
+  if (editing) return (
+    <div className="stack">
+      <CatPicker value={item.cat} onChange={cat => updateItem(trip.id, item.id, { cat })} onManage={onManage} />
+      <label className="lab">내용<InlineField className="field big" value={item.text} label="내용" placeholder="할 일 또는 장소" onCommit={text => text && updateItem(trip.id, item.id, { text })} /></label>
+      <div className="row2">
+        <label className="lab">시간<InlineField className="field" value={item.time} label="시간" placeholder="예: 09:30" onCommit={time => updateItem(trip.id, item.id, { time })} /></label>
+        <label className="lab">날짜
+          <select className="field" value={item.dayId} onChange={e => {
+            const list = data.itemsByDay.get(e.target.value) || [];
+            moveItem(trip.id, item.id, e.target.value, (list[list.length - 1]?.order ?? -1) + 1);
+            toast(`${md(data.dayById.get(e.target.value)!.date)}로 옮겼습니다.`);
+          }}>
+            {data.days.map(d => <option key={d.id} value={d.id}>{dayLabel(d)}</option>)}
+          </select>
+        </label>
+      </div>
+      <CardAttach trip={trip} data={data} item={item} editable />
+      <div className="sheet-foot">
+        <ConfirmButton label="카드 삭제" title="이 카드를 삭제할까요?" confirm={checks.length ? '카드의 체크리스트는 이 날짜에 남습니다.' : '되돌릴 수 없습니다.'}
+          onConfirm={() => { deleteItem(trip.id, item, data.checks, data.files); onClose(); toast('카드를 삭제했습니다.'); }} />
+      </div>
+    </div>
+  );
   return (
     <div className="stack">
-      {editing ? (
-        <>
-          <div className="toolbar"><span className="mode">편집 중</span><EditToggle editing onToggle={() => setEditing(false)} /></div>
-          <CatPicker value={item.cat} onChange={cat => updateItem(trip.id, item.id, { cat })} onManage={onManage} />
-          <label className="lab">내용<InlineField className="field big" value={item.text} label="내용" placeholder="할 일 또는 장소" onCommit={text => text && updateItem(trip.id, item.id, { text })} /></label>
-          <div className="row2">
-            <label className="lab">시간<InlineField className="field" value={item.time} label="시간" placeholder="예: 09:30" onCommit={time => updateItem(trip.id, item.id, { time })} /></label>
-            <label className="lab">날짜
-              <select className="field" value={item.dayId} onChange={e => {
-                const list = data.itemsByDay.get(e.target.value) || [];
-                moveItem(trip.id, item.id, e.target.value, (list[list.length - 1]?.order ?? -1) + 1);
-                toast(`${md(data.dayById.get(e.target.value)!.date)}로 옮겼습니다.`);
-              }}>
-                {data.days.map(d => <option key={d.id} value={d.id}>{dayLabel(d)}</option>)}
-              </select>
-            </label>
-          </div>
-          <section className="block">
-            <div className="block-h"><b>체크리스트</b>{checks.length > 0 && <span className="n">{n}/{checks.length}</span>}</div>
-            <CheckRows trip={trip} rows={checks} editable />
-            <AddLine placeholder="체크할 것 (예: 입장권 예매)" label="체크리스트 추가" onAdd={t => addCheck(trip.id, t, 'item', item.id)} />
-          </section>
-          <div className="sheet-foot">
-            <ConfirmButton label="카드 삭제" title="이 카드를 삭제할까요?" confirm={checks.length ? '카드의 체크리스트는 이 날짜에 남습니다.' : '되돌릴 수 없습니다.'}
-              onConfirm={() => { deleteItem(trip.id, item, data.checks, data.files); onClose(); toast('카드를 삭제했습니다.'); }} />
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="cardview">
-            <div className="cmeta"><CatChip cat={item.cat} />{item.time && <span className="time">{item.time}</span>}<span className="grow" /><EditToggle editing={false} onToggle={() => setEditing(true)} /></div>
-            <p className="cardview-t">{item.text}</p>
-          </div>
-          <CardAttachments trip={trip} data={data} item={item} />
-          <CardPlaces trip={trip} data={data} item={item} />
-          <Section title="체크리스트" count={checks.length ? `${n}/${checks.length}` : null} onAdd={() => setAddingCheck(a => !a)} addLabel="체크리스트 추가">
-            {checks.length > 0 && <CheckRows trip={trip} rows={checks} />}
-            {addingCheck && <AddLine placeholder="체크할 것 (예: 입장권 예매)" label="체크리스트 추가" onAdd={t => addCheck(trip.id, t, 'item', item.id)} />}
-          </Section>
-        </>
-      )}
+      <CardAttach trip={trip} data={data} item={item} />
+      <CardChecklist trip={trip} item={item} checks={checks} />
     </div>
+  );
+}
+
+/** A card's checklist in its own box: tick rows; 편집 there to rename or remove them; the add line shows while editing or when empty. */
+function CardChecklist({ trip, item, checks }: { trip: Trip; item: Item; checks: Check[] }) {
+  const [editing, setEditing] = useState(false);
+  const n = checks.filter(c => c.done).length;
+  return (
+    <section className="block">
+      <div className="block-h">
+        <b>체크리스트</b>{checks.length > 0 && <span className="n">{n}/{checks.length}</span>}
+        {checks.length > 0 && <EditToggle editing={editing} onToggle={() => setEditing(e => !e)} />}
+      </div>
+      {checks.length > 0 && <CheckRows trip={trip} rows={checks} editable={editing} />}
+      {(editing || !checks.length) && <AddLine placeholder="체크할 것 (예: 입장권 예매)" label="체크리스트 추가" onAdd={t => addCheck(trip.id, t, 'item', item.id)} />}
+    </section>
   );
 }
 

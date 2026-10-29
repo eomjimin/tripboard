@@ -21,7 +21,7 @@ async function loadImage(file: File): Promise<CanvasImageSource & { width: numbe
 
 /** Reads a picked file into an attachment, or returns a message saying why it can't be added. */
 export async function readAttachment(file: File): Promise<Pick<Attachment, 'name' | 'kind' | 'data' | 'size'> | string> {
-  const name = file.name.replace(/\.[^.]+$/, '') || '첨부';
+  const name = file.name.replace(/\.[^.]+$/, '') || '파일';
   if (file.type === 'application/pdf') {
     const data = await readDataURL(file);
     return data.length > MAX_CHARS ? 'PDF가 너무 커서 올릴 수 없어요 (약 500KB까지). 화면을 캡처해 사진으로 올려 주세요.' : { name, kind: 'pdf', data, size: file.size };

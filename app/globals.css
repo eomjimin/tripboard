@@ -247,9 +247,9 @@ textarea.inl { resize: none; field-sizing: content; min-height: 1.7em; line-heig
 .sheet.bottom { left: 0; right: 0; bottom: 0; max-height: 92dvh; border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
 .sheet.side { top: 12px; right: 12px; bottom: 12px; width: min(440px, calc(100% - 24px)); border-radius: 24px; }
 .handle { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 8px auto 0; flex: none; }
-.sheet-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 16px 20px 6px; }
-.sheet-t { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.025em; }
-.sheet-sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.sheet-h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0 10px; padding: 16px 20px 6px; } /* line 1: title · actions · ×, line 2: the subtitle across the full width */
+.sheet-t { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.025em; word-break: keep-all; overflow-wrap: anywhere; }
+.sheet-sub { flex-basis: 100%; margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 .x { border: 0; background: var(--sunk); width: 30px; height: 30px; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--muted); flex: none; }
 .sheet-b { overflow-y: auto; padding: 14px 20px 28px; overscroll-behavior: contain; }
 .stack { display: grid; gap: 18px; }
@@ -278,7 +278,7 @@ button.block { text-align: left; color: var(--ink); width: 100%; }
 .cardview { display: grid; gap: 6px; }
 .cardview-t { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.35; letter-spacing: -.025em; }
 .cardview .muted { margin: 0; font-size: 14px; }
-.cardview .kchip::before, .block-h .kchip::before, .csub-h .kchip::before { background: var(--k); }
+.cardview .kchip::before, .block-h .kchip::before, .csub-h .kchip::before, .cardsub .kchip::before { background: var(--k); }
 
 /* checklists */
 .checks { list-style: none; margin: 0; padding: 0; }
@@ -342,10 +342,11 @@ button.block { text-align: left; color: var(--ink); width: 100%; }
   .hint { display: none; }
   .bar { margin: 0; }
   .bar .seg-ctl { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; border-radius: 0; gap: 0;
-    padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(2px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+    /* the iPhone home-bar inset (34px) is more room than the bar needs below its labels: use part of it, so icons sit centred like a native tab bar */
+    padding: 8px max(8px, env(safe-area-inset-right, 0px)) max(6px, calc(env(safe-area-inset-bottom, 0px) - 14px)) max(8px, env(safe-area-inset-left, 0px));
     background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: saturate(1.8) blur(20px); -webkit-backdrop-filter: saturate(1.8) blur(20px);
     box-shadow: 0 -.5px 0 var(--line); }
-  .bar .seg-ctl button { flex: 1; padding: 4px 4px 6px; font-size: 10.5px; font-weight: 500; display: flex; justify-content: center; color: var(--faint); }
+  .bar .seg-ctl button { flex: 1; padding: 4px; font-size: 10.5px; font-weight: 500; display: flex; justify-content: center; color: var(--faint); }
   .bar .seg-ctl button[aria-selected="true"] { color: var(--ink); }
   .bar .seg-ctl .lbl { flex-direction: column; gap: 3px; }
   .bar .seg-ctl .ico { width: 24px; height: 24px; }
@@ -367,7 +368,7 @@ button.block { text-align: left; color: var(--ink); width: 100%; }
 }
 
 /* sheet header back button (stacked sheets) */
-.sheet-h .iconbtn.back { margin: -6px 0 0 -10px; flex: none; }
+.sheet-h .iconbtn.back { margin: 0 0 0 -10px; flex: none; }
 .sheet-tt { flex: 1; min-width: 0; }
 
 /* 편집 chip at the end of the kind picker */
@@ -588,8 +589,35 @@ button.cdot[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 
 .phit b { font-weight: 600; font-size: 14.5px; }
 .phit.plain > .ico { color: var(--accent); }
 
-/* card sections (첨부 · 장소 · 체크리스트): a hairline above, title, count and + in one line, no box */
-.sect { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
-.sect-h { display: flex; align-items: center; gap: 8px; min-height: 32px; margin: -4px 0; }
-.sect-h b { font-weight: 600; font-size: 15px; }
-.sect-h .iconbtn { color: var(--muted); }
+/* a card's files and places: small, between two hairlines, "파일 +" / "장소 +" (the checklist below stays a box) */
+.attach { display: grid; grid-template-columns: minmax(0, 1fr); padding: 4px 0; margin-bottom: 4px; border-block: .5px solid var(--line); } /* minmax: long place names ellipsize instead of widening the sheet; .5px = one device pixel on phones */
+.att-sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px 0; }
+.att-h { display: flex; align-items: center; gap: 6px; min-height: 24px; line-height: 1; } /* line-height 1: title, count and + share one centre line */
+.att-h b { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.att-h > .ico { display: block; color: var(--muted); margin-right: -1px; }
+.att-h .n { font-size: 13.5px; color: var(--faint); }
+.att-add { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); padding: 0; }
+.att-add .ico { display: block; stroke-width: 2.2; }
+.att-add:active { background: var(--sunk); }
+.att-add:disabled { opacity: .5; }
+.thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 6px 6px 2px 0; margin-top: -6px; scrollbar-width: none; }
+.thumb-w { position: relative; flex: none; }
+.thumb { display: grid; place-items: center; width: 52px; height: 52px; border: 0; padding: 0; border-radius: 10px; overflow: hidden; background: var(--sunk); box-shadow: inset 0 0 0 1px var(--line); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-pdf { display: grid; justify-items: center; gap: 1px; font-size: 10px; font-weight: 700; color: var(--danger); }
+.thumb-x { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--surface); background: var(--ink); color: var(--surface); display: grid; place-items: center; padding: 0; }
+.pl { display: flex; align-items: center; gap: 4px; }
+.pl-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 2px 0; color: var(--ink); text-decoration: none; }
+.pl-link > .ico { color: var(--accent); flex: none; }
+.pl-t { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; }
+.pl-t b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+.pl-t small { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; }
+.navbtn.sm { padding: 4px 9px; font-size: 12px; gap: 3px; }
+.sheet.bottom.tall { height: 80dvh; }
+
+/* card sheet header: kind · time · day under the title, ✎ next to × */
+.sheet-h .edit-toggle { flex: none; height: 30px; padding: 0 12px; } /* same height as × */
+.cardsub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.cardsub .kchip { font-size: 12.5px; }
+.cardsub .time { font-weight: 600; color: var(--ink-2); }
+.block-h .edit-toggle { padding: 4px 10px; font-size: 12px; }

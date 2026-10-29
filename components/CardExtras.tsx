@@ -9,15 +9,24 @@ import { addAttachment, deleteAttachment, updateItem } from '@/lib/store';
 import { toast } from '@/lib/toast';
 import { uid } from '@/lib/util';
 import type { Attachment, Item, PlaceRef, Trip } from '@/lib/types';
-import { ConfirmButton, Icon, Section } from './ui';
+import { ConfirmButton, Icon } from './ui';
 
-/** Files on a card (boarding passes, ticket QRs …): add several at once, tap to see full screen. */
-export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
+/**
+ * What hangs off a card, like attachments on a mail: photos and PDFs (boarding passes, ticket QRs) as small thumbnails,
+ * places as rows that open Google Maps; each under a hairline with a small + to add. Removing them is for ✎ edit mode.
+ */
+export function CardAttach({ trip, data, item, editable }: { trip: Trip; data: TripData; item: Item; editable?: boolean }) {
   const files = data.filesOfItem(item.id);
   const images = files.filter(f => f.kind === 'image');
+  const places = item.places ?? [];
   const [view, setView] = useState<string | null>(null);
   const [busy, setBusy] = useState(0);
+  const [adding, setAdding] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // Rank search results near where this trip already is: this card's places first, then any card's.
+  const anchor = [...places, ...data.items.flatMap(i => i.places ?? [])].find(x => x.lat != null && x.lng != null);
+  const near = useMemo(() => (anchor ? { lat: anchor.lat!, lng: anchor.lng! } : undefined), [anchor?.lat, anchor?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  const savePlaces = (next: PlaceRef[]) => updateItem(trip.id, item.id, { places: next });
   const add = async (list: File[]) => {
     setBusy(list.length);
     let order = (files[files.length - 1]?.order ?? -1) + 1;
@@ -28,21 +37,53 @@ export function CardAttachments({ trip, data, item }: { trip: Trip; data: TripDa
     }
   };
   return (
-    <Section title="첨부" count={files.length} onAdd={() => input.current?.click()} addLabel="사진·PDF 첨부" busy={busy > 0}>
-      {files.length > 0 && <div className="att-grid">
-        {files.map(f => (
-          <motion.button key={f.id} className="att" whileTap={{ scale: .95 }} onClick={() => (f.kind === 'pdf' ? openPdf(f) : setView(f.id))} aria-label={`${f.name} 열기`}>
-            {f.kind === 'image' ? <img src={f.data} alt="" /> : <span className="att-pdf"><Icon name="file" size={26} />PDF</span>}
-            <small>{f.name}</small>
+    <div className="attach">
+      <section className="att-sec">
+        <div className="att-h">
+          <Icon name="clip" size={15} /><b>파일</b>{files.length > 0 && <span className="n">{files.length}</span>}
+          <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => input.current?.click()} disabled={busy > 0} aria-label="파일 추가">
+            <Icon name={busy ? 'clip' : 'plus'} size={14} />
           </motion.button>
+          {busy > 0 && <small className="n">올리는 중…</small>}
+        </div>
+        {files.length > 0 && (
+          <div className="thumbs">
+            {files.map(f => (
+              <div key={f.id} className="thumb-w">
+                <motion.button className="thumb" whileTap={{ scale: .94 }} onClick={() => (f.kind === 'pdf' ? openPdf(f) : setView(f.id))} aria-label={`${f.name} 열기`}>
+                  {f.kind === 'image' ? <img src={f.data} alt="" /> : <span className="thumb-pdf"><Icon name="file" size={18} />PDF</span>}
+                </motion.button>
+                {editable && <button type="button" className="thumb-x" onClick={() => { deleteAttachment(trip.id, f.id); toast('파일을 삭제했습니다.'); }} aria-label={`${f.name} 삭제`}><Icon name="x" size={12} /></button>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+      <section className="att-sec">
+        <div className="att-h">
+          <Icon name="pin" size={15} /><b>장소</b>{places.length > 0 && <span className="n">{places.length}</span>}
+          <motion.button type="button" className="att-add" whileTap={{ scale: .85 }} onClick={() => setAdding(a => !a)} aria-label="장소 추가" aria-expanded={adding}>
+            <Icon name="plus" size={14} />
+          </motion.button>
+        </div>
+        {places.map(p => (
+          <div key={p.id} className="pl">
+            <a className="pl-link" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer">
+              <Icon name="pin" size={15} />
+              <span className="pl-t"><b>{p.name}</b>{p.address && <small>{p.address}</small>}</span>
+              <span className="navbtn sm"><Icon name="nav" size={13} />지도</span>
+            </a>
+            {editable && <ConfirmButton compact label={`${p.name} 빼기`} confirm="" onConfirm={() => savePlaces(places.filter(x => x.id !== p.id))} />}
+          </div>
         ))}
-      </div>}
+        {adding && <PlaceSearch near={near} onPick={p => { savePlaces([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />}
+      </section>
       <input ref={input} type="file" accept="image/*,application/pdf" multiple hidden
         onChange={e => { const l = Array.from(e.target.files ?? []); e.target.value = ''; if (l.length) add(l); }} />
       <AnimatePresence>
         {view && <Viewer trip={trip} files={images} start={view} onClose={() => setView(null)} />}
       </AnimatePresence>
-    </Section>
+    </div>
   );
 }
 
@@ -68,7 +109,7 @@ function Viewer({ trip, files, start, onClose }: { trip: Trip; files: Attachment
       <div className="viewer-top">
         <button className="iconbtn" onClick={onClose} aria-label="닫기"><Icon name="x" size={22} /></button>
         <span className="viewer-name">{f.name}{files.length > 1 && <small> {i + 1}/{files.length}</small>}</span>
-        <ConfirmButton compact label={`${f.name} 삭제`} confirm="" onConfirm={() => { deleteAttachment(trip.id, f.id); setI(n => Math.max(0, n - 1)); toast('첨부를 삭제했습니다.'); }} />
+        <ConfirmButton compact label={`${f.name} 삭제`} confirm="" onConfirm={() => { deleteAttachment(trip.id, f.id); setI(n => Math.max(0, n - 1)); toast('파일을 삭제했습니다.'); }} />
       </div>
       <motion.img key={f.id} src={f.data} alt={f.name} className="viewer-img" drag={files.length > 1 ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={.4}
         onDragEnd={(_, d) => { if (d.offset.x < -60) setI(n => Math.min(files.length - 1, n + 1)); else if (d.offset.x > 60) setI(n => Math.max(0, n - 1)); }}
@@ -81,29 +122,6 @@ function Viewer({ trip, files, start, onClose }: { trip: Trip; files: Attachment
       )}
     </motion.div>,
     document.body,
-  );
-}
-
-/** Places on a card; each opens its page in Google Maps, where 경로 starts directions. */
-export function CardPlaces({ trip, data, item }: { trip: Trip; data: TripData; item: Item }) {
-  const places = item.places ?? [];
-  const [adding, setAdding] = useState(false);
-  // Rank search results near where this trip already is: this card's places first, then any card's.
-  const anchor = [...places, ...data.items.flatMap(i => i.places ?? [])].find(x => x.lat != null && x.lng != null);
-  const near = useMemo(() => (anchor ? { lat: anchor.lat!, lng: anchor.lng! } : undefined), [anchor?.lat, anchor?.lng]); // eslint-disable-line react-hooks/exhaustive-deps
-  const save = (next: PlaceRef[]) => updateItem(trip.id, item.id, { places: next });
-  return (
-    <Section title="장소" count={places.length} onAdd={() => setAdding(a => !a)} addLabel="장소 추가">
-      {places.map(p => (
-        <div key={p.id} className="prow">
-          <Icon name="pin" size={18} />
-          <span className="pname"><b>{p.name}</b>{p.address && <small>{p.address}</small>}</span>
-          <a className="navbtn" href={mapsUrl(p)} target="_blank" rel="noopener noreferrer"><Icon name="nav" size={16} />지도</a>
-          <ConfirmButton compact label={`${p.name} 빼기`} confirm="" onConfirm={() => save(places.filter(x => x.id !== p.id))} />
-        </div>
-      ))}
-      {adding && <PlaceSearch near={near} onPick={p => { save([...places, p]); setAdding(false); }} onCancel={() => setAdding(false)} />}
-    </Section>
   );
 }
 

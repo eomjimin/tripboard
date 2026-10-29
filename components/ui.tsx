@@ -113,16 +113,16 @@ export function Tick({ done, onToggle, label, disabled }: { done: boolean; onTog
   );
 }
 
-/** Bottom sheet on phones (drag down to close), side panel on wide screens. */
-export function Sheet({ open, onClose, onBack, title, sub, children }: {
-  open: boolean; onClose: () => void; onBack?: () => void; title: React.ReactNode; sub?: React.ReactNode; children: React.ReactNode;
+/** Bottom sheet on phones (drag down to close; `tall` opens it at 80% height), side panel on wide screens. */
+export function Sheet({ open, onClose, onBack, title, sub, actions, tall, children }: {
+  open: boolean; onClose: () => void; onBack?: () => void; title: React.ReactNode; sub?: React.ReactNode; actions?: React.ReactNode; tall?: boolean; children: React.ReactNode;
 }) {
   const wide = useMedia('(min-width: 760px)');
   return (
     <Drawer.Root open={open} onOpenChange={o => { if (!o) onClose(); }} direction={wide ? 'right' : 'bottom'}>
       <Drawer.Portal>
         <Drawer.Overlay className="scrim" />
-        <Drawer.Content className={`sheet ${wide ? 'side' : 'bottom'}`} aria-describedby={undefined}
+        <Drawer.Content className={`sheet ${wide ? 'side' : 'bottom'}${tall ? ' tall' : ''}`} aria-describedby={undefined}
           // a full-screen layer opened from the sheet (photo viewer) is not "outside" the sheet
           onPointerDownOutside={e => { if ((e.target as Element | null)?.closest?.('[data-keep-sheet]')) e.preventDefault(); }}
           onInteractOutside={e => { if ((e.target as Element | null)?.closest?.('[data-keep-sheet]')) e.preventDefault(); }}
@@ -130,8 +130,10 @@ export function Sheet({ open, onClose, onBack, title, sub, children }: {
           {!wide && <div className="handle" aria-hidden="true" />}
           <div className="sheet-h">
             {onBack && <button className="iconbtn back" onClick={onBack} aria-label="뒤로"><Icon name="back" size={20} /></button>}
-            <div className="sheet-tt"><Drawer.Title className="sheet-t">{title}</Drawer.Title>{sub && <p className="sheet-sub">{sub}</p>}</div>
+            <div className="sheet-tt"><Drawer.Title className="sheet-t">{title}</Drawer.Title></div>
+            {actions}
             <button className="x" onClick={onClose} aria-label="닫기">×</button>
+            {sub && <div className="sheet-sub">{sub}</div>}
           </div>
           <div className="sheet-b">{children}</div>
         </Drawer.Content>
@@ -181,24 +183,5 @@ export function AddLine({ placeholder, onAdd, label }: { placeholder: string; on
       <input value={v} onChange={e => setV(e.target.value)} placeholder={placeholder} aria-label={label} autoComplete="off" enterKeyHint="done" />
       <motion.button whileTap={{ scale: .9 }} className="btn sec" disabled={!v.trim()}>추가</motion.button>
     </form>
-  );
-}
-
-/** A card section under a hairline: title, count and + in one line; the body shows only when there is something in it. */
-export function Section({ title, count, onAdd, addLabel, busy, children }: {
-  title: string; count?: React.ReactNode; onAdd?: () => void; addLabel?: string; busy?: boolean; children?: React.ReactNode;
-}) {
-  return (
-    <section className="sect">
-      <div className="sect-h">
-        <b>{title}</b>{count ? <span className="n">{count}</span> : null}
-        {onAdd && (
-          <motion.button type="button" whileTap={{ scale: .88 }} className="iconbtn sm" onClick={onAdd} disabled={busy} aria-label={addLabel ?? `${title} 추가`}>
-            <Icon name={busy ? 'clip' : 'plus'} size={20} />
-          </motion.button>
-        )}
-      </div>
-      {children}
-    </section>
   );
 }

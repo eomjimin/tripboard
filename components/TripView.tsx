@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { buildTripData, stayGroups, useTripData } from '@/lib/hooks';
 import { diff, dt, md, todayId, WD } from '@/lib/util';
@@ -10,7 +10,7 @@ import ChecklistView from './ChecklistView';
 import StaysView from './StaysView';
 import { CardSheet, DaySheet, MembersSheet, TagManager, TripSettingsSheet } from './Sheets';
 import { PlaceEditor } from './PlaceSelect';
-import { Icon, type IconName, Sheet } from './ui';
+import { CatChip, EditToggle, Icon, type IconName, Sheet } from './ui';
 
 export type SheetState = { kind: 'card'; id: string } | { kind: 'day'; id: string } | { kind: 'add'; dayId: string } | { kind: 'newday' }
   | { kind: 'place'; name: string } | { kind: 'tags' } | { kind: 'members' } | { kind: 'trip' } | { kind: 'filter' };
@@ -38,6 +38,9 @@ function TripScreen({ trip, email, onBack, demo }: {
   const closeSheet = () => { if (stack.length > 1) setStack(st => st.slice(0, -1)); else setSheetOpen(false); };
   const closeAll = () => setSheetOpen(false);
   const manageTags = () => openSheet({ kind: 'tags' });
+  // a card's ✎ lives in the sheet header, so its state lives here; any other sheet on top starts it over
+  const [cardEditing, setCardEditing] = useState(false);
+  useEffect(() => setCardEditing(false), [sheet]);
   const groups = useMemo(() => stayGroups(data.days), [data.days]);
 
   const first = data.days[0]?.date, last = data.days[data.days.length - 1]?.date;
@@ -56,12 +59,14 @@ function TripScreen({ trip, email, onBack, demo }: {
   const jump = (dayId: string) => { setView('board'); requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('board:jump', { detail: dayId }))); };
   const dayName = (d: Day) => `${md(d.date)} (${WD[dt(d.date).getUTCDay()]})`;
 
-  let sheetBody: React.ReactNode = null, sheetTitle: React.ReactNode = '', sheetSub: React.ReactNode = null;
+  let sheetBody: React.ReactNode = null, sheetTitle: React.ReactNode = '', sheetSub: React.ReactNode = null, sheetActions: React.ReactNode = null;
   if (sheet?.kind === 'card') {
     const it = data.itemById.get(sheet.id);
     const d = it ? data.dayById.get(it.dayId) : undefined;
-    sheetTitle = '카드'; sheetSub = d ? `${dayName(d)} · ${d.title || '제목 없음'}` : null;
-    sheetBody = it ? <CardSheet trip={trip} data={data} item={it} onClose={closeSheet} onManage={manageTags} /> : <p className="muted">삭제된 카드입니다.</p>;
+    sheetTitle = it?.text || '카드';
+    sheetSub = it && d ? <span className="cardsub"><CatChip cat={it.cat} />{it.time && <span className="time">{it.time}</span>}<span>{dayName(d)} · {d.title || '제목 없음'}</span></span> : null;
+    sheetActions = it ? <EditToggle editing={cardEditing} onToggle={() => setCardEditing(e => !e)} /> : null;
+    sheetBody = it ? <CardSheet trip={trip} data={data} item={it} editing={cardEditing} onClose={closeSheet} onManage={manageTags} /> : <p className="muted">삭제된 카드입니다.</p>;
   } else if (sheet?.kind === 'day') {
     const d = data.dayById.get(sheet.id);
     sheetTitle = d ? `${dayName(d)} 체크리스트` : '날짜'; sheetSub = d?.title;
@@ -154,7 +159,7 @@ function TripScreen({ trip, email, onBack, demo }: {
         </motion.div>
       </AnimatePresence>
 
-      <Sheet open={sheetOpen} onClose={closeAll} onBack={stack.length > 1 ? closeSheet : undefined} title={sheetTitle} sub={sheetSub}>{sheetBody}</Sheet>
+      <Sheet open={sheetOpen} tall={sheet?.kind === 'card'} onClose={closeAll} onBack={stack.length > 1 ? closeSheet : undefined} title={sheetTitle} sub={sheetSub} actions={sheetActions}>{sheetBody}</Sheet>
     </div>
   );
 }
